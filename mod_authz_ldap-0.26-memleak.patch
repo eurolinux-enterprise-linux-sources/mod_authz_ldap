@@ -1,0 +1,27 @@
+
+https://bugzilla.redhat.com/show_bug.cgi?id=493261
+
+--- mod_authz_ldap-0.26/module/certmap.c.memleak
++++ mod_authz_ldap-0.26/module/certmap.c
+@@ -107,6 +107,8 @@ static char	*authz_ldap_get_certificate(
+ 		p += 3;
+ 	}
+ 
++	X509_free(xs);
++
+ 	/* return the quoted certificate				*/
+ 	return cp;
+ #else /* AUTHZ_LDAP_HAVE_SSL */
+@@ -622,10 +624,10 @@ int	authz_ldap_map_user(request_rec *r) 
+ 						}
+ 					}
+ 				}
+-				/* XXX not needed?
++				/* This is needed */
+ 				if (ber != NULL)
+ 					ber_free(ber, 0);
+-				*/
++
+ 				ldap_memfree(attr);
+ 			}
+ 		}

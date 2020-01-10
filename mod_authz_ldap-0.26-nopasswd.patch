@@ -1,0 +1,18 @@
+
+Don't log the password on error.
+
+https://bugzilla.redhat.com/show_bug.cgi?id=782442
+
+--- mod_authz_ldap-0.26/module/utilities.c.nopasswd
++++ mod_authz_ldap-0.26/module/utilities.c
+@@ -128,8 +128,8 @@ int	authz_ldap_connect(request_rec *r) {
+ 		if (sec->loglevel >= APLOG_EMERG)
+ 		ap_log_rerror(APLOG_MARK, APLOG_EMERG, APLOG_STATUS r,
+ 			"cannot bind to "
+-			"[%d] LDAP Server as %s/%s: %d", (int)getpid(), 
+-			sec->binddn, sec->bindpw, rc);
++			"[%d] LDAP Server as %s: %d", (int)getpid(), 
++			sec->binddn, rc);
+ 		return -1;
+ 	}
+ 	AUTHZ_DEBUG2("[%d] bind to ldap server succeeded", (int)getpid());

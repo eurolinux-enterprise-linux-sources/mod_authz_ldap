@@ -2,8 +2,8 @@
 Summary: LDAP authorization module for the Apache HTTP Server
 Name: mod_authz_ldap
 Version: 0.26
-Release: 15%{?dist}
-License: BSD
+Release: 16%{?dist}
+License: ASL 1.0
 Group: System Environment/Daemons
 URL: http://authzldap.othello.ch/
 Source0: http://authzldap.othello.ch/download/%{name}-%{version}.tar.gz
@@ -15,6 +15,8 @@ Patch4: mod_authz_ldap-0.26-subreq.patch
 Patch5: mod_authz_ldap-0.26-apr1x.patch
 Patch6: mod_authz_ldap-0.26-parser.patch
 Patch7: mod_authz_ldap-0.26-sslvar.patch
+Patch8: mod_authz_ldap-0.26-nopasswd.patch
+Patch9: mod_authz_ldap-0.26-memleak.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: httpd-devel, openssl-devel, openldap-devel
 Requires: httpd-mmn = %(cat %{_includedir}/httpd/.mmn || echo httpd-devel missing)
@@ -37,6 +39,8 @@ aging, and authentication based on role or by configured filters.
 %patch5 -p1 -b .apr1x
 %patch6 -p1 -b .parser
 %patch7 -p1 -b .sslvar
+%patch8 -p1 -b .nopasswd
+%patch9 -p1 -b .memleak
 
 %build
 libtoolize --copy --force && aclocal && autoconf
@@ -77,6 +81,11 @@ rm -rf $RPM_BUILD_ROOT
 %doc NEWS AUTHORS ChangeLog COPYING
 
 %changelog
+* Fri Aug 31 2012 Joe Orton <jorton@redhat.com> - 0.26-16
+- don't log passwords on error (#782442)
+- add memory leak fix (#643691)
+- fix License field
+
 * Fri Aug 21 2009 Tomas Mraz <tmraz@redhat.com> - 0.26-15
 - rebuilt with new openssl
 
