@@ -1,0 +1,134 @@
+MOD_AUTHZ_LDAP Example
+----------------------
+
+Authenticate against certificate by serialNumber,
+authorize against attribute authorizationRole.
+
+1. Schema changes
+
+- Create a schema file, authzldap.schema with following contents:
+
+attributetype ( 1.3.6.1.4.1.4263.5.1 NAME 'issuerDN'
+	DESC 'distinguished name of the issuer of a certificate'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.40 SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.4263.5.2 NAME 'subjectDN'
+	DESC 'distinguished name of the subject of a certificate'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.40 SINGLE-VALUE )
+
+objectclass ( 1.3.6.1.4.1.4263.5.3 NAME 'authzLDAPmap'
+	DESC 'Map Entry for mod_authz_ldap'
+	SUP top AUXILIARY
+	MUST ( issuerDN $ owner )
+	MAY ( userCertificate $ serialNumber $ subjectDN ) )
+
+- Create a schema file, roles.schema with following contents:
+
+attributetype ( 1.3.6.1.4.1.4264.5.2 NAME  'authorizationRole' SUP name )
+
+objectclass ( 1.3.6.1.4.1.4264.5.3 NAME 'roleAuthorizedUser'
+	SUP top AUXILIARY
+	MAY authorizationRole )
+
+- Copy files to /usr/local/openldap/etc/schema or appropriate location
+
+- Add schema files to slapd configuration in slapd.conf:
+include 	/usr/local/etc/openldap/schema/authzldap.schema
+include 	/usr/local/etc/openldap/schema/roles.schema
+
+2. Create entries
+
+- Add users with roles:
+
+dn: uid=fem,ou=People,o=Company,c=ch
+objectclass: top
+objectclass: person
+objectclass: inetOrgPerson
+objectclass: roleAuthorizedUser
+uid: fem
+cn: Felix Muster
+givenname: Felix
+sn: Muster
+mail: felix.muster@company.ch
+telephonenumber: +41 1 111 11 11
+preferredLanguage: de
+userpassword: manager
+authorizationRole: webadmin
+authorizationRole: webuser
+
+dn: uid=hed,ou=People,o=Company,c=ch
+objectclass: top
+objectclass: person
+objectclass: inetOrgPerson
+objectclass: roleAuthorizedUser
+uid: hed
+cn: Henri Dunant
+givenname: Henri
+sn: Dunant
+mail: henri.dunant@company.ch
+telephonenumber: +41 1 111 11 12
+preferredLanguage: fr
+userpassword: manager
+authorizationRole: webuser
+
+
+- Create certmap:
+dn: ou=AuthzLDAPCertmap,o=Company,c=ch
+objectClass: top
+objectClass: organizationalUnit
+ou: AuthzLDAPCertmap
+
+- Create certmap entries for users:
+
+cert2ldap -i -n \
+ -D "uid=fem,ou=AuthzLDAPCertmap,o=Company,c=ch" -w secret \
+ -b "cn=root,o=Company,c=ch" \
+ -o "uid=fem,ou=People,o=Company,c=ch" <fem.pem
+
+cert2ldap -i -n \
+ -D "uid=hed,ou=AuthzLDAPCertmap,o=Company,c=ch" -w secret \
+ -b "cn=root,o=Company,c=ch" \
+ -o "uid=hed,ou=People,o=Company,c=ch" <hed.pem
+
+
+3. Setup Apache
+
+
+<Location />
+        SSLRequireSSL
+        AuthName        Internal
+        AuthType        Basic
+	AuthzLDAPEngine	on
+        AuthzLDAPServer "localhost:389"
+        AuthzLDAPUseCertificate on
+        AuthzLDAPUseSerial on
+        AuthzLDAPMapBase ou=AuthzLDAPCertmap,o=Company,c=ch
+        AuthzLDAPMapScope onelevel
+        AuthzLDAPRoleAttributeName authorizationRole
+        require role webuser
+        # This is the same as require filter (authorizationRole=webuser)
+</Location>
+
+<Location /admin>
+        SSLRequireSSL
+        AuthName        Internal
+        AuthType        Basic
+	AuthzLDAPEngine	on
+        AuthzLDAPServer "localhost:389"
+        AuthzLDAPUseCertificate on
+        AuthzLDAPUseSerial on
+        AuthzLDAPMapBase ou=AuthzLDAPCertmap,o=Company,c=ch
+        AuthzLDAPMapScope onelevel
+        AuthzLDAPRoleAttributeName authorizationRole
+        require role webadmin
+        # This is the same as require filter (authorizationRole=webadmin)
+</Location>
+
+
+Example provided by Tim Tassonis <tim.tassonis@trivadis.com>, updated for
+0.22 by Andreas Mueller <afm@othello.ch>
+
+--
+$Id: authzldap.txt,v 1.2 2002/10/10 08:36:05 afm Exp $

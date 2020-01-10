@@ -1,0 +1,14 @@
+Tools
+-----
+
+This directory contains two programs useful for administering the
+directory. cert2ldap allows to put a certificate in the directory
+with the right definitions. certfind performs the same search algorithm
+as the Apache module to find the user based on the certificate.
+
+The three scripts adduser, addgroup and addcertmap show how to
+correctly define a user, group and certificate map node for use
+with mod_authz_ldap.
+
+--
+$Id: README,v 1.1 2001/08/25 15:54:06 afm Exp $

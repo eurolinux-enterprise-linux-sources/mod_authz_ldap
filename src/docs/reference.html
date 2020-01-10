@@ -1,0 +1,379 @@
+<hml>
+<head>
+<title>mod_authz_ldap - reference</title>
+</head>
+<body bgcolor="#ffff00">
+
+<table cellpadding="0" cellspacing="0" border="0">
+<tr><td colspan="9"><img src="mod_authz_ldap.jpg"></td>
+<tr bgcolor="#ffff00">
+<td>&nbsp;</td>
+<td><font bgcolor=""><a href="index.html"><img src="introduction.jpg"
+	alt=" Introduction " border="0"></a></font></td>
+<td><font bgcolor=""><a href="download.html"><img src="download.jpg"
+	alt=" Download " border="0"></a></font></td>
+<td><font bgcolor=""><a href="installation.html"><img src="installation.jpg"
+	alt=" Installation " border="0"></a></font></td>
+<td><font bgcolor=""><a href="configuration.html"><img src="configuration.jpg"
+	alt=" Configuration " border="0"</a></font></td>
+<td><font bgcolor=""><a href="ldap.html"><img src="ldap.jpg"
+	alt=" LDAP " border="0"></a></font></td>
+<td><font bgcolor=""><a href="howto.html"><img src="howto.jpg"
+	alt=" HOWTO " border="0"></a></font></td>
+<td><font bgcolor=""><a href="reference.html"><img src="reference.jpg"
+	alt=" Reference " border="0"></a></font></td>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td width="10"></td>
+<td bgcolor="#ffffff" colspan="7" width="700">
+<font face="helvetica">
+<br />
+<h1><a name="reference">Reference Configuration Directives</a></h1>
+<p>
+Find a short description of the configuration directives in mod_authz_ldap
+below. For details about the configuration, please refer to the
+<a href="configuration.html">configuration</a> manual.
+</p>
+
+<ul>
+<li><a href="#AuthzLDAPMethod">AuthzLDAPMethod</a>
+<li><a href="#AuthzLDAPMapMethod">AuthzLDAPMapMethod</a>
+<li><a href="#AuthzLDAPServer">AuthzLDAPServer</a>
+<li><a href="#AuthzLDAPBindDN">AuthzLDAPBindDN</a>
+<li><a href="#AuthzLDAPBindPassword">AuthzLDAPBindPassword</a>
+<li><a href="#AuthzLDAPProtocolVersion">AuthzLDAPProtocolVersion</a>
+
+<li><a href="#AuthzLDAPUserBase">AuthzLDAPUserBase</a>
+<li><a href="#AuthzLDAPUserKey">AuthzLDAPUserKey</a>
+<li><a href="#AuthzLDAPUserScope">AuthzLDAPUserScope</a>
+
+<li><a href="#AuthzLDAPGroupBase">AuthzLDAPGroupBase</a>
+<li><a href="#AuthzLDAPGroupKey">AuthzLDAPGroupKey</a>
+<li><a href="#AuthzLDAPGroupScope">AuthzLDAPGroupScope</a>
+<li><a href="#AuthzLDAPMemberKey">AuthzLDAPMemberKey</a>
+
+<li><a href="#AuthzLDAPMapBase">AuthzLDAPMapBase</a>
+<li><a href="#AuthzLDAPMapScope">AuthzLDAPMapScope</a>
+<li><a href="#AuthzLDAPMapWithAD">AuthzLDAPMapWithAD</a>
+<li><a href="#AuthzLDAPSetAuthorization">AuthzLDAPSetAuthorization</a>
+<li><a href="#AuthzLDAPSetGroupAuth">AuthzLDAPSetGroupAuth</a>
+<li><a href="#AuthzLDAPMapUserToAttr">AuthzLDAPMapUserToAttr</a>
+
+<li><a href="#AuthzLDAPModifyKey">AuthzLDAPModifyKey</a>
+
+<li><a href="#AuthzLDAPAuthoritative">AuthzLDAPAuthoritative</a>
+<li><a href="#AuthzLDAPProxyAuthentication">AuthzLDAPProxyAuthentication</a>
+<li><a href="#AuthzLDAPLogLevel">AuthzLDAPLogLevel</a>
+<li><a href="#AuthzLDAPAllowPassword">AuthzLDAPAllowPassword</a>
+
+<li><a href="#AuthzLDAPCacheConnection">AuthzLDAPCacheConnection</a>
+<li><a href="#AuthzLDAPCacheSize">AuthzLDAPCacheSize</a>
+<li><a href="#AuthzLDAPCacheTimeout">AuthzLDAPCacheTimeout</a>
+</ul>
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPMethod"></a>AuthzLDAPMethod <i>{ ldap | ldapmapped | certificate | both }</i><br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> none <br />
+Defines how the module should authenticate. By default, it does not do
+anything. If <i>ldap</i> is selected, only basic authentication against
+the directory is performed. With <i>certificate</i> an X.509 certificate
+is verified against the LDAP directory. <i>both</i> asks to first verify
+the certificate in the LDAP directory and then perform basic authentication
+against the LDAP directory, but the distinguished name for the basic
+authentication login and for the certificate must match. The <i>ldapmapped</i>
+is mainly for use with Active Directory, which has got the bind syntax
+completely wrong. The active directory seems to expect that you bind with
+our username as the bind DN, not with your DN!
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPMapMethod"></a>AuthzLDAPMapMethod
+<i>{ certificate | issuerserial | issuersubject | ad }</i><br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> none <br />
+Defines how the module should map the certificate to an LDAP directory node.
+The <i>certificate</i> method performs a subtree search from the user base
+node for a user with a <i>userCertificate</i> attribute that matches the
+certificate seen on the connection. This requires that the directory
+allows equality matching for the <i>userCertificate</i> attribute, which
+is not what the standards say. The <i>issuerserial</i> method uses the
+map to look for a node based on issuer name and serial number, and
+uses the owner attribute of such a node to find the user. Analogously,
+<i>issuersubject</i> uses issuer name and subject name to find the map node.
+
+<p>
+The <i>ad</i> method was contributed, but I'm currently unable to test it.
+Here is the original descritpion:
+Certificates will be searched for in a way that is thought
+to be similar to that used with Active Directory.  First, the
+subject alternative names of the certificate are parsed and, if one
+of type othername is found and its associated object identifier is
+"1.3.6.1.4.1.311.20.2.3" (User Principal Name), its value is used to
+search for an entry having such value for the userPrincipalName attribute.
+If no such subject alternative name is found, then the issuer and subject
+distinguished names of the certificate are combined to form a search
+filter for the altSecurityIdentities attribute.
+</p>
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPServer"></a>AuthzLDAPServer <i>host</i>[:<i>port</i>]<br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> as set in the LDAP client configuration file, usually
+something like <code>/etc/ldap.conf</code><br />
+Defines the <a href="configuration.html#ldapserver">LDAP server</a> to connect to. If the port is not set, the 
+standard LDAP port 389 is used.
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPBindDN"></a>AuthzLDAPBindDN <i>dn</i><br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> none<br />
+Some <a href="configuration.html#ldapserver">servers</a> require an LDAP bind, this directive sets the distinguished
+name for the bind operation.
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPBindPassword"></a>AuthzLDAPBindPassword <i>pw</i><br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> none<br />
+Some <a href="configuration.html#ldapserver">servers</a> require an LDAP bind, this directive sets the password
+name for the bind operation.
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPProtocolVersion"></a>AuthzLDAPProtocolVersion <i>{1|2|3}</i><br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> none<br />
+Set the protocol version to use to connect to the directory. Required
+with OpenLDAP 2.1.5 libraries.
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPUserBase"></a>AuthzLDAPUserBase <i>dn</i><br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> none<br />
+The user must be searched for in the directory, this directive
+sets the <a href="configuration.html#ldapauth">search base</a>.
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPUserKey"></a>AuthzLDAPUserKey <i>attributename</i><br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> none<br />
+The value of this directive defines the search filter used to <a href="configuration.html#ldapauth">search
+for the user</a>.
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPUserScope"></a>AuthzLDAPUserScope {base|onlevel|subtree}<br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> base<br />
+If the namespace for users in the directory is flat, a onlevel
+search will be the most efficient way to find the user, but some
+organisations will have hierarchical name spaces. If the namespace
+ist flat and the user distinguished name can be computed from userid
+and search base, a base search is also possible. In this case,
+the userid is <a href="configuration.html#ldapauth">constructed</a> as described above.
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPGroupBase"></a>AuthzLDAPGroupBase <i>dn</i><br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> none<br />
+Set the base for <a href="configuration.html#group">group membership</a> requirement searches.
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPGroupKey"></a>AuthzLDAPGroupKey <i>attributename</i><br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> none<br />
+Set the name of the attribute identifying <a href="configuration.html#group">group</a>s underneath the group search
+base set by the <a href="#AuthzLDAPGroupBase">AuthzLDAPGroupBase</a> directive.
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPGroupScope"></a>AuthzLDAPGroupScope {base|onlevel|subtree}<br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> base<br />
+Scope to search for matching <a href="configuration.html#group">group</a>s.
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPMemberKey"></a>AuthzLDAPMemberKey <i>attributename</i><br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> member<br />
+Set the name of the attribute containing group member distinguished
+names.
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPMapBase"></a>AuthzLDAPMapBase <i>dn</i><br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> none<br />
+Base for <a href="configuration.html#certificates">certificate mapping</a> entries.
+
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPMapScope"></a>AuthzLDAPMapScope {base|onlevel|subtree}<br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> onlevel<br />
+Scope for <a href="configuration.html#certificates">certificate mapping</a> entries.
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPSetAuthorization"></a>AuthzLDAPSetAuthorization <i> { user | ldapdn | subject | map }{+password} </i><br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> none<br />
+This directive gives precise control over the way how the authorization
+header is overwritten by <code>mod_authz_ldap</code>.
+By default, the modules leaves the headers alone. This allows the
+user authenticated by a certificate to use basic authentication
+unimpeeded. The argument indicates the source from where the user name
+will be taken: <i>user</i> means the original basic authentication header,
+<i>ldapdn</i> means the LDAP distinguished name found to be associated with
+this user, <i>subject</i> means this users certificate subject DN, and
+<i>map</i> means the value of the mapped attribute when the
+<a href="#AuthzLDAPMapUserToAttr">AuthzLDAPMapUserToAttr</a> is in use.
+If the string <i>+password</i> is appended, the module takes the password
+specified in the original basic authentication header, otherwise it uses
+the constant string <tt>password</tt>.
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPSetGroupAuth"></a>AuthzLDAPSetGroupAuth <i> { user | ldapdn | map } </i><br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> none<br />
+This directive gives control over how the membership checking
+should be done. With the <code>user</code> value, the user name
+is used for membership verification. With <code>ldapdn</code>, it is
+the LDAP distinguished name found upon certificate or user lookup.
+With <code>map</code>, the user is first mapped according to the
+settings of AuthzLDAPMapUserToAttr and the result used for membership
+checking. The following configuration example illustrates this:
+<pre>
+	# map users to the uid uid for membership checking
+	AuthzLDAPMapUserToAttr      uid
+	AuthzLDAPSetGroupAuth       map
+	# this means that the memberUid attribute must match the uid
+	# (which is the result of the map operation)
+	AuthzLDAPMemberKey          memberUid
+	# checks membership in a specific group. a user is accepted
+	# precisely if his uid is the value of one of the memberUid
+	# attributes of the group specified below
+	require group cn=ceres10,ou=intranet,ou=groups,o=company
+</pre>
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPMapUserToAttr"></a>AuthzLDAPMapUserToAttr <i>attributename</i><br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> none<br />
+If set, the value (if present) of the indicated attribute in the
+mapped entry is used to replace the user identity instead of the
+distinguished name of the mapped entry.  This is only supported when
+either AuthzLDAPDirect or AuthzLDAPMapWithAD are set.
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPRoleAttributeName"></a>AuthzLDAPRoleAttributeName <i>attributename</i><br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> none<br />
+Used to specify a attribute name to check for special values as given by
+<code>require role</code> directives.
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPModifyKey"></a>AuthzLDAPModifyKey <i>attributename</i><br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> none<br />
+Then checking a directory entry for last password modification, an
+attribute containing the time of last modification must be specified.
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPAuthoritative"></a>AuthzLDAPAuthoritative {on|off}<br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> on<br />
+Usually the authentication and authorization decisions of
+<code>mod_authz_ldap</code> are final. Sometimes however it is desired to
+have other modules do checks if <code>mod_authz_ldap</code> would 
+deny a request. In these cases, <a href="#AuthzLDAPAuthoritative">this</a>
+option must be set to <code>off</code>.
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPProxyAuthentication"></a>AuthzLDAPProxyAuthentication {on|off}<br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> automatically determined<br />
+In <a href="configuration.html#transpauth">some cases</a> the kind of authentication performed must be explicitly
+specified to the module. E.g. a <a href="configuration.html#reverse">reverse proxy</a>
+will let the module believe that proxy authentication is the thing
+to do, but to the client the proxy appears as the server, so it
+should really do normal authentication. 
+Setting <a href="#AuthzLDAPProxyAuthentication">this</a> option
+to <code>off</code> forces normal authentication, <code>on</code>
+forces proxy authentication.
+<p>
+If a reverse proxy performs basic authentication using this module,
+and the backend server expects to see the basic authentication header also,
+you must turn this option off. This causes the module to believe it is
+doing basic authentication, although it is working as a proxy. If
+<a href="#AuthzLDAPSetAuthorization">AuthzLDAPSetAuthorization</a>
+is set so as to set the basic authorization header, <code>mod_proxy</code>
+will send the Authorization header to the backend system. Note that
+<code>mod_proxy</code> will never forward the Proxy-Authorization
+header, as it sees this as a security problem.
+</p>
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPLogLevel"></a>AuthzLDAPLogLevel {emerg|alert|crit|error|warn|notice|info|debug}<br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> debug<br />
+Reduce the volume of <a href="configuration.html#logging">log messages</a> from this module.
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPAllowPassword"></a>AuthzLDAPAllowPassword {on|off}<br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> off<br />
+If a user does not present a certificate, still accept him if she can
+prove her identity via userid/password. Note that this weakens security
+quite a bit, and should probably used only in settings where certificates
+are a convenience rather than a requirement. For this to work it is
+necessary to set the mod_ssl configuration directive
+SSLVerifyClient to optional.
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPCacheConnection"></a>AuthzLDAPCacheConnection <i>{ on | off }</i><br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> off<br />
+Set to <i>on</i> if the module should cache LDAP connections between
+requests. This may speed up LDAP operations, but also ties up resources
+inside the apache process and on the LDAP server.
+You must not set this to on if you are invoking mod_authz_ldap from
+within an .htaccess file (because every invokation of the module creates
+a new LDAP connection, which will be cached indefinitely).
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPCacheSize"></a>AuthzLDAPCacheSize <i>size</i><br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> 0<br />
+Set the size of the cache the LDAP library is allowed to build. 
+Setting the cache size to 0 disables caching. The module will not allow
+a cache to be created that is larger than the maximum set during 
+configuration (128k being the default if option was given to
+<code>conigure</code>).
+
+<hr noshade size="1" />
+<strong>Syntax:</strong> <a name="AuthzLDAPCacheTimeout"></a>AuthzLDAPCacheTimeout <i>timeout</i><br />
+<strong>Context:</strong> virtual host, directory<br />
+<strong>Default:</strong> 600<br />
+Timeout in seconds for entries in the LDAP cache. As a timeout longer
+than one day seldom makes sense, the default timeout of 600 seconds
+is used whenever a timeout longer than a day or a negative timeout
+is specified. The default can be configured at configure time for the
+module.
+
+
+</font>
+</td>
+<td width="10"></td>
+</tr>
+
+<tr><td colspan="9">&nbsp;</td></tr>
+
+<tr>
+<td width="10"></td>
+<td bgcolor="#ffffff" colspan="7">
+<font face="helvetica">
+&copy; <a href="mailto:andreas.mueller@othello.ch">Dr. Andreas M&uuml;ller</a>,
+<a href="http://www.othello.ch">Beratung und Entwicklung</a>.
+</font>
+</td>
+<td width="10"></td>
+</tr>
+</table>
+
+
+</body>
+</html>

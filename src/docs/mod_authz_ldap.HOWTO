@@ -1,0 +1,311 @@
+The mod_authz_ldap mini-HOWTO
+Beat Kneubuehl, beat.kneubuehl@dplanet.ch
+Version 0.1, August 2001
+Version 0.2, November 2001
+Please feel free to send comments to beat.kneubuehl@dplanet.ch
+
+
+How to set up mod_authz_ldap with Apache webserver as a DSO module
+for x509 certificate verification and user mapping
+______________________________________________________________________
+
+Table of Contents
+
+1. Introduction
+
+   1.1. mod_authz_ldap - what and why
+
+
+2. Building the software
+
+   2.1 Building Apache Webserver
+   2.2 Modifying mod_ssl source code
+   2.3 Building openldap
+   2.4 Building mod_authz_ldap
+
+
+3. Setting up the LDAP directory
+
+
+4. Edit httpd.conf
+
+   4.1 Load mod_authz_ldap
+   4.2 Activate Certificate check
+______________________________________________________________________
+
+1. Introduction
+
+1.1. mod_authz_ldap - what and why
+
+In the following example, mod_authz_ldap maps the issuer/subject pair of
+a x509 client certificate to the appropriate user in the LDAP directory.
+Afterwards it checks if the user has an ldap attribute with the name 
+visAuthAccess with the required value set to grant access to the webserver.
+visAuthAccess is a private attribute defined at our site that contains
+role information for authorization purposes.
+
+1.2 Involved software
+
+This howto is based on the following software:
+- Apache 1.3.20
+- mod_authz_ldap 0.15
+- mod_ssl-2.8.4-1.3.20
+- iplanet Directory Server 5.0
+- openldap-2.0.11
+- Server OS Solaris 8
+
+Basically the software releases shouldn't matter, that proceed is almost
+the same.
+
+1.3 Downloading required software
+
+To build mod_authz_ldap, you'll need LDAP libraries, preferably the ones
+from the OpenLDAP distribution, you can download them from
+http://www.openldap.org
+
+Furthermore, the OpenSSL crypto library provides mod_authz_ldap with
+the necessary X.509 intelligence so it can understand certificates.
+You can download it from http://www.openssl.org or one of its mirrors.
+
+mod_authz_ldap itself can be downloaded from
+http://www.othello.ch/software/mod_authz_ldap, or consult the Apache
+module registry at http://modules.apache.org for current release and
+download information.
+
+______________________________________________________________________
+
+2. Building the software
+
+2.1 Building Apache Webserver
+
+There is already a lot of apache/mod_ssl documentation floating around,
+therefore this howto doesn't take care about building apache+mod_ssl. 
+You can check out the following the following links:
+- http://www.apache.org
+- http:/www.modssl.org
+
+Notes:
+- DONT TRY TO DOWNLOAD A BINARY DISRIBUTION FROM APACHE!!!
+  It won't work, because you have to modify the source code from mod_ssl.
+- add --enable-module=so to make sure you have support for DSO modules.
+
+
+2.2 Modifying mod_ssl source code
+
+Starting with release 0.22 of mod_authz_ldap, it is no longer necessary
+to modify mod_ssl, as a different method has been found to get at the
+certificate information burried insied mod_ssl. The main advantage of the
+new method is that it also works with apache 2.
+
+2.3 Building openldap
+
+You have to build openldap before you can start to build mod_authz_ldap; 
+mod_authz_ldap needs some libraries from the openldap distribution.
+
+If openldap is already installed on your system or if you can grab a binary
+distribution of openldap for your OS, you are ready to build mod_authz_ldap.
+In this case make sure you can find libldap.so.2 and liblber.so.2 on your 
+system.
+
+Otherwise you have to build openldap first, but a simple configure, make and
+make install should be enough.
+
+
+2.4 Building mod_authz_ldap
+
+Whenever possible you should build mod_authz_ldap as dynamic DSO Apache module,
+because it's no longer supported as a static module and it's much better
+tested as a DSO.
+
+First of all make sure you have DSO support in Apache binary, by executing the
+following command:
+/usr/bin/apache/bin/httpd -l       (or wherever your httpd binary lives)
+You should see mod_so.c listed as a module; this means your Apache is ready to
+work with DSO's.
+
+Then you can start the configure script from the mod_authz_ldap distribution.
+Maybe you have to add -L and -I flags to the configure script, thus he can 
+find the openldap libs, and of course you have to add 
+--with-apxs=/usr/local/apache/bin/apxs (or wherever your apxs script lives).
+
+The following environment variable may need to be set to match your
+installation paths of OpenLDAP and maybe OpenSSL:
+
+CPPFLAGS	to fix problems with headers not found, -I/path/to/ldap/include
+CFLAGS		special compilation options, optimization, cross compilation
+LDFLAGS		linking problems, -L/path/to/ldap/libdir
+
+Example: most OpenLDAP installations on proprietary operating systems
+will have OpenLDAP installed in /usr/local. In this case, running configure
+with CPPFLAGS and LDFLAGS set as follows will work:
+
+	CPPFLAGS=-I/usr/local/openldap/include	\
+	LDFLAGS=-L/usr/local/openlap/lib	\
+	./configure --with-apxs=/usr/local/apache/bin/apxs
+
+Now you can simply start make/make install and mod_authz_ldap will build and
+copy to your /usr/local/apache/libexec dir.
+
+______________________________________________________________________
+
+3. Setting up the LDAP directory
+
+Now you have set up your LDAP directory. You have to modify the LDAP schema,
+because the required attributes and objectclasses to store the data from the 
+certificate are not standard LDAP attributes.
+You can find some examples how to modify the ldap schema for openldap in the
+mod_authz_ldap documentation.
+In this example, we use an Iplanet Directory Server, but the only thing
+which is different from the openldap scenario is how the schema extension is
+done.
+The Iplanet LDAP Server stores the schema in LDIF format, the user defined 
+attributes and objectlcasses are stored in a file called 99user.ldif.
+You can simply add the following lines to this file:
+
+------------------------------------------------------------------------------
+objectClasses: ( 1.3.6.1.4.1.4263.5.3 NAME 'authzLDAPmap' SUP top STRUCTURAL M
+ UST ( issuerDN $ owner $ subjectDN $ uid ) X-ORIGIN 'user defined' )
+attributeTypes: ( 1.3.6.1.4.1.4263.5.1 NAME 'issuerDN' DESC 'The user friendly
+  version of the distinguished name of the issuer of a certificate' SYNTAX 1.
+ 3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE X-ORIGIN 'user defined' )
+attributeTypes: ( 1.3.6.1.4.1.4263.5.2 NAME 'subjectDN' DESC 'The user friendl
+ y version of the distinguished name of the subject of a certificate' SYNTAX 
+ 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE X-ORIGIN 'user defined' )
+-------------------------------------------------------------------------------
+
+Your Directory Server is now ready to get filled with certificate data.
+
+Basically you have to add two entries in the directory for each user, one 
+entry with all the user information and password, and one entry which stores
+the certificate data, like issuer, subject and serial (not the certificate 
+itself) and the pertinent user.
+
+In this example I will show you how to add the entries with an ldif file without
+the bundled cert2ldap tool, because I think you can better understand what happens
+exactly.
+If you are not familiar with the ldap command line tools, I guess this is the
+moment to read the manpages now.
+
+First of all you need two objectclasses, people and authzldapcertmap.
+You can set up them with the following ldif file, if they are not already
+present in your directory:
+
+------------------------------------------------------------------------
+dn: ou=People,dc=company,dc=com
+objectClass: top
+objectClass: organizationalunit
+ou: People
+
+dn: ou=AuthzLDAPCertmap,dc=company,dc=com
+ou: AuthzLDAPCertmap
+objectClass: top
+objectClass: organizationalUnit
+------------------------------------------------------------------------
+
+Note:
+- In this examples we use the issuer/subject pair; you can also use the 
+  combination issuer/serial number, in this case you have to store 
+  the serial number instead of subject.
+
+Now you can add the entry in the people organizational unit:
+
+------------------------------------------------------------------------  
+dn: uid=user,ou=People,dc=company,dc=com
+userPassword: {SSHA}IDLS/233A
+objectClass: top
+objectClass: extranetPerson
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: visPeopleAuth
+uid: user
+mail: user@company.com
+visAuthAccess: caadmin
+-----------------------------------------------------------------------
+
+Note that in our LDAP directory the objectClass visPeopleAuth ensures
+that the visAuthAccess attribute we use for authorization is present.
+
+Next you have to add the certificate data:
+
+----------------------------------------------------------------------
+dn: uid=user,ou=AuthzLDAPCertmap,dc=company,dc=com
+owner: uid=user,ou=People,dc=company,dc=com
+objectClass: top
+objectClass: authzLDAPmap
+issuerDN: /C=CH/L=Bern/O=Company/OU=IT/CN=Company CA/Email=caadmin@company.com
+subjectDN: /C=CH/O=Company/OU=IT/CN=user/Email=user@company.com
+uid: user
+----------------------------------------------------------------------
+
+You can add these entries with the ldapadd (1) command, see manpage
+for details.
+
+To find out the issuer, serial and subject of a certificate, you can use
+the openssl command:
+
+openssl x509 -in certfile.pem -noout -subject -issuer -serial
+
+______________________________________________________________________
+
+4. Edit httpd.conf
+
+4.1 Load mod_authz_ldap
+
+If you've built mod_authz_ldap as a DSO (as you probably did), you
+need to add two lines to the httpd.conf file:
+
+LoadModule authz_ldap_module   libexec/mod_authz_ldap.so
+AddModule mod_authz_ldap.c
+
+The first line loads mod_authz_ldap at startup, the second line enables
+the module.
+
+4.2 Activate Certificate check
+
+In the following example the access to the whole server is protected by the
+following lines:
+
+---------------------------------------------------------------------------
+<Location />
+
+        SSLRequireSSL
+        AuthName                        AuthzLDAP
+        AuthType                        Basic
+	AuthzLDAPEngine			on
+        AuthzLDAPServer                 ldap.company.com
+
+        AuthzLDAPAuthoritative          on
+        AuthzLDAPSetAuthorization       on
+        AuthzLDAPLogLevel               info
+        AuthzLDAPUseSerial              off
+
+        AuthzLDAPUseCertificate         on
+        AuthzLDAPMapBase                ou=AuthzLDAPCertmap,dc=company,dc=com
+        AuthzLDAPMapScope               onelevel
+
+        AuthzLDAPRoleAttributeName      visAuthAccess
+        require role                    caadmin
+
+</Location>
+---------------------------------------------------------------------------
+
+Additionally you have to uncomment the following line:
+
+SSLVerifyClient require
+
+To make sure the client sends his certificate, and we can extract necessary
+values.
+
+In this example, mod_authz_ldap searches in ou=AuthzLDAPCertmap,dc=company,
+dc=com for the issuer/subject pair from the certificate.
+If it finds the entry, it asks for the owner attribute, which points to
+the corresponding entry in the people tree.
+Afterwards it checks if the entry in the people tree has an attribute with the
+name visAuthAccess and the value caadmin, if everything fits, it grants access
+to the webserver.
+
+You can use the same configuration for a reverse proxy, we use such a
+setup to grant some of our client certificate authenticated users secure
+access our intranet via an SSL capable Apache reverse proxy.
+

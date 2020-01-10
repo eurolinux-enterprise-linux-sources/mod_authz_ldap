@@ -1,0 +1,28 @@
+#! /bin/sh
+#
+# add group nodes for group authorization tests
+#
+# (c) 2000 Dr. Andreas Mueller, Beratung und Entwicklung
+#
+# $Id: addgroup,v 1.1 2001/08/25 15:54:06 afm Exp $
+#
+ldapadd -c -D cn=root,dc=othello,dc=ch -w secret <<EOF
+dn: ou=Group,dc=othello,dc=ch
+objectclass: top
+
+dn: cn=group1,ou=Group,dc=othello,dc=ch
+objectclass: top
+objectclass: groupOfNames
+cn: group1
+member: uid=afm,ou=People,dc=othello,dc=ch
+member: uid=jackie,ou=People,dc=othello,dc=ch
+
+dn: cn=group2,ou=Group,dc=othello,dc=ch
+objectclass: top
+objectclass: groupOfNames
+cn: group2
+member: uid=jackie,ou=People,dc=othello,dc=ch
+
+EOF
+
+exit 0

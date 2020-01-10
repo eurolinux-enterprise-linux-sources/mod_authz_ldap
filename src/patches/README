@@ -1,0 +1,9 @@
+Patches
+-------
+
+This are diff files against some versions of ssl_engine_kernel.c from
+the mod_ssl distribution. See the module documentation to understand
+why and if you have to apply the patch to use mod_authz_ldap fully.
+
+--
+$Id: README,v 1.1 2001/08/25 16:08:42 afm Exp $

@@ -1,0 +1,169 @@
+dnl
+dnl configure.in -- autoconfiguration script for mod_authz_ldap
+dnl
+dnl Process this file with autoconf to produce a configure script.
+dnl
+dnl $Id: configure.in,v 1.32 2003/11/20 09:19:42 afm Exp $
+dnl
+dnl (c) 2000 Dr. Andreas Mueller, Beratung und Entwicklung
+dnl
+AC_PREREQ(2.12)dnl
+AC_REVISION([1.0])dnl
+
+AC_INIT(module/mod_authz_ldap.c)
+AC_CANONICAL_SYSTEM
+
+AM_INIT_AUTOMAKE(mod_authz_ldap, 0.26)
+AM_CONFIG_HEADER(authz.h)
+
+AC_ARG_WITH(apxs,
+	[  --with-apxs             use APXS tool to create Apache DSO object],
+        apxs_path=${with_apxs})
+AC_ARG_ENABLE(debug,
+	[  --enable-debug          include additional debug code],
+	CPPFLAGS="${CPPFLAGS} -DAUTHZ_LDAP_DEBUG")
+AC_ARG_WITH(openssl-path,
+	[  --with-openssl-path     path to the OpenSSL installation],
+	openssl_path=${with_openssl_path})
+if test -n ${openssl_path}
+then
+	CPPFLAGS="-I${openssl_path}/include ${CPPFLAGS}"
+	LIBS="-L${openssl_path}/lib -lssl -lcrypto ${LIBS}"
+else
+	LIBS="-lssl -lcrypto ${LIBS}"
+fi
+
+if test -s "${apxs_path}"
+then
+	AC_MSG_CHECKING(checking for apxs)
+	if type ${apxs_path} >/dev/null 2>&1
+	then
+		# find apxs
+		apxs_result=`type ${apxs_path}`
+		AC_MSG_RESULT(${apxs_result})
+		APXS=${with_apxs}
+		AC_SUBST(APXS)
+		# find apachectl
+		if test `dirname ${with_apxs}` = "."
+		then
+			apachectl=apachectl
+		else
+			apachectl=`dirname ${with_apxs}`/apachectl
+		fi
+		if type ${apachectl} >/dev/null 2>&1
+		then
+			APACHECTL=${apachectl}
+		else
+			APACHECTL="echo not found apachectl "
+		fi
+		AC_SUBST(APACHECTL)
+	else
+		AC_MSG_ERROR(APXS not found as ${with_apxs})
+		exit 1
+	fi
+else
+	if test -w ../../Configuration 
+	then
+		echo AddModule modules/mod_authz_ldap/mod_authz_ldap.o >>../../Configuration
+	fi
+fi
+
+dnl Checks for programs.
+AC_PROG_CC
+AC_PROG_INSTALL
+AC_PROG_LIBTOOL
+
+dnl Checks for libraries.
+AC_CHECK_LIB(socket, shutdown)
+AC_CHECK_LIB(nsl, gethostbyname)
+AC_CHECK_LIB(resolv, res_query)
+AC_CHECK_LIB(lber, ber_printf, ber_lib=-llber)
+if test -z "${ber_lib}"
+then
+	AC_MSG_ERROR(no BER library found)
+fi
+dnl Replace `main' with a function in -lldap:
+LIBS="${ber_lib} ${LIBS}"
+AC_CHECK_LIB(ldap, ldap_simple_bind_s, ldap_lib=-lldap)
+if test -z "${ldap_lib}"
+then
+	AC_MSG_ERROR(no LDAP library found)
+fi
+LIBS="${LDFLAGS} ${ldap_lib} ${LIBS}"
+
+dnl
+dnl in the Apache module, we may run into a problem with an undefined
+dnl symbol __eprintf if we don't link against libgcc (should no longer be
+dnl a problem with gcc 3, but note that the module was not tested with
+dnl gcc 3)
+dnl
+AC_ARG_ENABLE(libgcc,
+	[  --enable-libgcc         explicitely link with libgcc],
+	USELIBGCC=yes)
+if test "${USELIBGCC}" = yes
+then
+	libgcc=`gcc -v 2>&1 | head -1 | awk '{print $NF}' | sed -e s/.specs//`
+	LIBGCCFLAGS="-L${libgcc} -lgcc"
+fi
+AC_SUBST(LIBGCCFLAGS)
+
+dnl Checks for header files.
+AC_CHECK_HEADERS(ldap.h)
+AC_CHECK_HEADERS(lber.h)
+AC_CHECK_HEADERS(sys/times.h)
+AC_CHECK_HEADERS(sys/time.h)
+AC_CHECK_HEADERS(sys/stat.h)
+AC_CHECK_HEADERS(unistd.h)
+AC_CHECK_HEADERS(ctype.h)
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+
+dnl Checks for library functions.
+AC_FUNC_STRFTIME
+
+dnl check for the ber_free function, as some libraries, most notably
+dnl the openldap libraries, don't have it
+AC_CHECK_FUNCS(ber_free)
+
+dnl check for the ldap_msgfree function, as some libraries, most notably
+dnl the openldap libraries, don't have it
+AC_CHECK_FUNCS(ldap_msgfree)
+
+dnl check for the ldap_memfree function, as some libraries, most notably
+dnl the openldap libraries, don't have it
+AC_CHECK_FUNCS(ldap_memfree)
+
+dnl some ldap libraries, notably the openldap 2 libraries implement a
+dnl cache for ldap queries
+AC_CHECK_FUNCS(ldap_enable_cache)
+
+dnl check for the ldap option setting function, because we need it to set
+dnl the protocol version for LDAP version 3
+AC_CHECK_FUNCS(ldap_set_option)
+
+AC_ARG_WITH(cachesize,
+	[  --with-cachesize        set maximum ldap cache size],
+	AC_DEFINE([AUTHZ_MAX_CACHE_SIZE], 65535, ${with_cachesize}))
+AC_ARG_WITH(timeout,
+	[  --with-timeout          set default cache timeout],
+	AC_DEFINE([AUTHZ_DEFAULT_CACHE_TIMEOUT], 86400, ${with_timeout}))
+
+dnl inform the module that SSL is disabled. 
+AC_ARG_ENABLE(ssl,
+	[  --disable-ssl           disable SSL related code (only for apache2)],
+	, CPPFLAGS="${CPPFLAGS} -DAUTHZ_LDAP_HAVE_SSL"
+	)
+AC_SUBST(AUTHZ_LDAP_HAVE_SSL)
+
+dnl the following flag is a clutch to work around a libtool bug in the
+dnl -module option
+SHAREDFLAG=-shared
+AC_ARG_WITH(sharedflag,
+	[  --with-sharedflag       set linker flag for shared libraries (-shared)],
+	SHAREDFLAG=${with_sharedflag})
+AC_SUBST(SHAREDFLAG)
+
+AC_OUTPUT(Makefile Makefile.tmpl module/Makefile tools/Makefile		\
+ldap/Makefile patches/Makefile
+docs/index.html	docs/Makefile docs/webactivate)

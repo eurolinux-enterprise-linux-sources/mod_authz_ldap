@@ -1,0 +1,17 @@
+News
+----
+
+This release incorporates the following changes:
+
+Previously we used two directives to tell the module what to do, namely
+the AuthzLDAPEngine command to tell to start working, and a separate
+command to tell it how to authenticate. These commands have been merged
+into a single AutzhLDAPMethod, see the docs for legal arguments. Without
+AuthzLDAPMethod, the module does nothing, just as it did previously when
+AuthzLDAPEngine was not specified.
+
+This causes the HOWTO to be slightly outdated, but I hope you will still
+find it helpful.
+
+--
+$Id: NEWS,v 1.10 2004/03/30 22:12:04 afm Exp $

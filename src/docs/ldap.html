@@ -1,0 +1,122 @@
+<html>
+<head>
+<title>mod_authz_ldap</title>
+</head>
+<body bgcolor="#ffff00">
+
+<table cellpadding="0" cellspacing="0" border="0">
+<tr><td colspan="9"><img src="mod_authz_ldap.jpg"></td>
+<tr bgcolor="#ffff00">
+<td>&nbsp;</td>
+<td><font bgcolor=""><a href="index.html"><img src="introduction.jpg"
+	alt=" Introduction " border="0"></a></font></td>
+<td><font bgcolor=""><a href="download.html"><img src="download.jpg"
+	alt=" Download " border="0"></a></font></td>
+<td><font bgcolor=""><a href="installation.html"><img src="installation.jpg"
+	alt=" Installation " border="0"></a></font></td>
+<td><font bgcolor=""><a href="configuration.html"><img src="configuration.jpg"
+	alt=" Configuration " border="0"</a></font></td>
+<td><font bgcolor=""><a href="ldap.html"><img src="ldap.jpg"
+	alt=" LDAP " border="0"></a></font></td>
+<td><font bgcolor=""><a href="howto.html"><img src="howto.jpg"
+	alt=" HOWTO " border="0"></a></font></td>
+<td><font bgcolor=""><a href="reference.html"><img src="reference.jpg"
+	alt=" Reference " border="0"></a></font></td>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td width="10"></td>
+<td bgcolor="#ffffff" colspan="7" width="700">
+<font face="helvetica">
+
+<br />
+<h1>LDAP Server Setup</h1>
+<p>
+mod_authz_ldap must make some assumptions on how information is stored
+in the directory. These assumptions are implicitely documented in the
+<a href="configuration.html">configuration manual</a>. Later versions
+will hopefully include a more detailed description here.
+In the meantime, the following example of a minimal LDAP directory
+that works with mod_authz_ldap may be helpful.
+</p>
+
+<font face="courier">
+<pre>
+# othello,dc=ch
+dn: dc=othello,dc=ch
+objectClass: top
+
+# People,dc=othello,dc=ch
+dn: ou=People,dc=othello,dc=ch
+objectClass: top
+
+# Group,dc=othello,dc=ch
+dn: ou=Group,dc=othello,dc=ch
+objectClass: top
+
+# afm,People,dc=othello,dc=ch
+dn: uid=afm,ou=People,dc=othello,dc=ch
+objectClass: account
+objectClass: posixAccount
+objectClass: top
+cn: Andreas Mueller
+uid: afm
+uidNumber: 100
+gidNumber: 100
+userPassword:: XXXXXXXX
+homeDirectory: /home/afm
+loginShell: /usr/local/bin/bash
+gecos: Andreas F Mueller
+
+# AuthzLDAPCertmap,dc=othello,dc=ch
+dn: ou=AuthzLDAPCertmap,dc=othello,dc=ch
+objectClass: top
+
+# afm,AuthzLDAPCertmap,dc=othello,dc=ch
+dn: uid=afm,ou=AuthzLDAPCertmap,dc=othello,dc=ch
+objectClass: top
+objectClass: authzLDAPmap
+issuerDN: /C=CH/ST=Schwyz/L=Altendorf/O=Othello/CN=Othello internal C
+ A/Email=ca@othello.ch
+subjectDN: /C=CH/ST=Schwyz/L=Altendorf/O=Othello/CN=Andreas Mueller/E
+ mail=afm@othello.ch
+owner: uid=afm,ou=People,dc=othello,dc=ch
+
+# group1,Group,dc=othello,dc=ch
+dn: cn=group1,ou=Group,dc=othello,dc=ch
+objectClass: top
+objectClass: groupOfNames
+cn: group1
+member: uid=afm,ou=People,dc=othello,dc=ch
+member: uid=jackie,ou=People,dc=othello,dc=ch
+
+# group2,Group,dc=othello,dc=ch
+dn: cn=group2,ou=Group,dc=othello,dc=ch
+objectClass: top
+objectClass: groupOfNames
+cn: group2
+member: uid=jackie,ou=People,dc=othello,dc=ch
+
+</pre>
+</font>
+
+
+</font>
+</td>
+<td width="10"></td>
+</tr>
+
+<tr><td colspan="9">&nbsp;</td></tr>
+
+<tr>
+<td width="10"></td>
+<td bgcolor="#ffffff" colspan="7">
+<font face="helvetica">
+&copy; <a href="mailto:andreas.mueller@othello.ch">Dr. Andreas M&uuml;ller</a>,
+<a href="http://www.othello.ch">Beratung und Entwicklung</a>.
+</font>
+</td>
+<td width="10"></td>
+</tr>
+</table>
+</body>

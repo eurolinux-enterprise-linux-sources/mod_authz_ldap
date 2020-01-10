@@ -1,0 +1,192 @@
+<html>
+<head>
+<title>mod_authz_ldap - home</title>
+</head>
+<body bgcolor="#ffff00">
+
+<table cellpadding="0" cellspacing="0" border="0">
+<tr><td colspan="9"><img src="mod_authz_ldap.jpg"></td>
+<tr bgcolor="#ffff00">
+<td>&nbsp;</td>
+<td><font bgcolor=""><a href="index.html"><img src="introduction.jpg"
+	alt=" Introduction " border="0"></a></font></td>
+<td><font bgcolor=""><a href="download.html"><img src="download.jpg"
+	alt=" Download " border="0"></a></font></td>
+<td><font bgcolor=""><a href="installation.html"><img src="installation.jpg"
+	alt=" Installation " border="0"></a></font></td>
+<td><font bgcolor=""><a href="configuration.html"><img src="configuration.jpg"
+	alt=" Configuration " border="0"</a></font></td>
+<td><font bgcolor=""><a href="ldap.html"><img src="ldap.jpg"
+	alt=" LDAP " border="0"></a></font></td>
+<td><font bgcolor=""><a href="howto.html"><img src="howto.jpg"
+	alt=" HOWTO " border="0"></a></font></td>
+<td><font bgcolor=""><a href="reference.html"><img src="reference.jpg"
+	alt=" Reference " border="0"></a></font></td>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td width="10"></td>
+<td bgcolor="#ffffff" colspan="7" width="700">
+<font face="helvetica">
+
+<br />
+
+<h1>An Apache LDAP Authorization module</h1>
+<p>
+This file documents version @VERSION@ of the <code>mod_authz_ldap</code>
+module.
+For details about the change history of the module, please
+consult the <a href="ChangeLog">ChangeLog</a>.
+</p>
+<p>
+<h2>News</h2>
+<ul>
+<li><code>mod_authz_ldap</code> now works with apache2. This provoked
+some nontrivial changes, as the module API has change a bit. But it
+also lead to the next new feature, which users of precompiled distributions
+of apache and mod_ssl will just love:
+<li>It is no longer necessary to patch mod_ssl source code: a better method
+has been found to access the client certificate data (some developers are
+blind, which certainly seems to apply to the author of
+<code>mod_authz_ldap</code>).
+<li><code>mod_authz_ldap</code> works now with OpenLDAP 2.1.5.
+<li>lots of other small changes, please check the
+<a href="ChangeLog">ChangeLog</a> for details.
+</ul>
+</p>
+
+<h2>What it does</h2>
+<p>
+This Apache LDAP authentication/authorization module tries to solve
+the following problems that other such modules may not solve in
+all cases:
+<ol>
+<li>Map the short form of the distinguished name of a certificate
+and its issuer obtained from the environment of
+<a href="http://www.modssl.org">mod_ssl</a> to a user
+distinguished name in an LDAP directory.
+<li>Check the age of a password in an LDAP directory, denying
+authorization in case the password is to old.
+<li>Authorize a user based on roles or an arbitrary LDAP filter
+expression.
+<li>Authorize a user based on whether he owns a file or belongs to
+the group owning a file.
+</ol>
+The module can perform an ordinary LDAP authentication using an LDAP
+<code>bind</code> call, but is incapable of verifying an SHA1 or crypt
+password hash from the directory, as <code>mod_auth_ldap</code> can.
+</p>
+<p>
+The module also tries to do reduce LDAP connection overhead by
+caching a connection between requests (one per server record).
+This is most likely to improve performance in the case of certificate
+authentication, as for basic authentication a bind to the directory on
+a new connection is necessary with every request.
+Future development may add a cache to improve performance.
+</p>
+<p>
+Version 0.8 added the ability to use the cache built into some client
+libraries, most notably OpenLDAP. However, it turned out that the cache
+for OpenLDAP 2.0.7 does not work, and only causes Apache to dump out the
+contents of BER buffers instead of authenticating users.
+</p>
+<p>
+<code>mod_authz_ldap</code> uses some functions from libraries that
+are only available on Unix systems, it will most probably not work
+on a Win32 system. There are no plans to fix this problem.
+</p>
+<p>
+Of course there are other modules that perform LDAP authentication.
+Not mentionning them here does not mean that they are insignificant,
+quite the contrary is true.
+But as far as I know, none of these alternatives does either certificate
+mapping or password aging.
+</p>
+
+
+<h2><a name="open">Open Issues, TODOs</a></h2>
+<ol>
+<li>
+Some details in the configuration directives are not quite
+correct yet, in particular using them in  a <code>.htaccess</code>
+may lead to a file descriptor leak.
+</li>
+<li>
+A patch to allow groups inside groups during group verification has
+been provided by Peter Huang of HP, and awaits its inclusion in
+the distribution. BTW, Peter added some other features as well ...</li>
+<li>
+We would like to have an LDAP cache to be able to do with less roundtrips
+to the directory server. 
+The cache would be most useful for the frequent binds when doing
+normal authentication (without certificates). In this case
+the cache could be very simple: it would store the pair (userid, password)
+together with the information that and when it was successfully
+authenticated.</li>
+<li>
+Also the most recently used mappings of users, groups and certificates 
+should be available in a cache, but the structure for such a case
+is much less clear.</li>
+</ol>
+
+<h2><a name="support">Support</a></h2>
+<p>
+If you run into problems with <tt>mod_authz_ldap</tt>, you should first try
+the online documentation. Starting with 0.20, a mailing list has been
+set up, send a message containing the line 
+<pre>
+subscribe <i>your-email-address(optional)</i>
+</pre>
+to  <a href="mailto:authzldap@lists.othello.ch">authzldap@lists.othello.ch</a>.
+Finally, you can always try to contact the author directly.
+</p>
+
+<h2><a name="license">License</a></h2>
+<p>
+This module is distributed under the terms of the Apache License,
+please check the LICENSE file in your apache distribution or the
+COPYING file of the mod_authz_ldap distribution for the exact terms
+of the license. In particular, the following disclaimer applies:
+</p>
+
+<font face="courier"> 
+<pre>
+THIS SOFTWARE IS PROVIDED BY ``AS IS'' AND ANY EXPRESSED OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+IN NO EVENT SHALL THE AUTHOR OR THE CONTRIBUTORS BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+</pre>
+</font>
+
+</font>
+</td>
+<td width="10"></td>
+</tr>
+
+<tr><td colspan="9">&nbsp;</td></tr>
+
+<tr>
+<td width="10"></td>
+<td bgcolor="#ffffff" colspan="7">
+<font face="helvetica">
+&copy; <a href="mailto:andreas.mueller@othello.ch">Dr. Andreas M&uuml;ller</a>,
+<a href="http://www.othello.ch">Beratung und Entwicklung</a>.
+</font>
+</td>
+<td width="10"></td>
+</tr>
+</table>
+
+</body>
+</html>
+
+
+
+

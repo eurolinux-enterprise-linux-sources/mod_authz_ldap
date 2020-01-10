@@ -1,0 +1,15 @@
+#
+# Makefile.tmpl.in for mod_authz_ldap.c
+#
+# $Id: Makefile.tmpl.in,v 1.1.1.1 2000/11/26 23:38:22 afm Exp $
+#
+# (c) 2000 Dr. Andreas Mueller, Beratung und Enticklung
+#
+#Dependencies
+
+$(OBJS) $(OBJS_PIC): Makefile
+
+# DO NOT REMOVE
+mod_authz_ldap.o: mod_authz_ldap.c					\
+	$(INCDIR)/httpd.h $(INCDIR)/http_config.h $(INCDIR)/http_protocol.h \
+	$(INCDIR)/http_core.h $(INCDIR)/ap_config.h $(INCDIR)/http_log.h

@@ -1,0 +1,21 @@
+LDAP
+----
+
+This directory contains example LDAP data and matching schema definitions.
+The file authzldap.schema contains the schema definition in standard
+format, while authzldap.slapd.conf uses the old OpenLDAP 1 or University
+of Michigan LDAP format. (the latter is no longer maintained or supported,
+and is here only for historical reasons).
+
+I use the data in this directory for testing, saying `make ldap' in this
+directory starts an OpenLDAP server (provided it is installed in
+/usr/local/libexec, I really don't want to make this dynamic via
+autoconf) on port 33389. The server uses the slapd.conf file generated
+by the configure script.
+
+If you are using OpenLDAP, make sure that you include core.schema,
+cosine.schema and nis.schema before including authzldap.schema, as
+authzldap.schema uses definitions from all of them.
+
+--
+$Id: README,v 1.4 2003/06/27 06:28:35 afm Exp $

@@ -1,0 +1,181 @@
+<!--
+
+  Documentation to mod_authz_ldap
+
+  (c) 2000, 2001 Dr. Andreas Mueller, Beratung und Entwicklung
+
+-->
+<html>
+<head>
+<title>Apache mod_authz_ldap authorization module</title>
+</head>
+<body bgcolor="#ffff00">
+
+<table cellpadding="0" cellspacing="0" border="0">
+<tr><td colspan="9"><img src="mod_authz_ldap.jpg"></td>
+<tr bgcolor="#ffff00">
+<td>&nbsp;</td>
+<td><font bgcolor=""><a href="index.html"><img src="introduction.jpg"
+	alt=" Introduction " border="0"></a></font></td>
+<td><font bgcolor=""><a href="download.html"><img src="download.jpg"
+	alt=" Download " border="0"></a></font></td>
+<td><font bgcolor=""><a href="installation.html"><img src="installation.jpg"
+	alt=" Installation " border="0"></a></font></td>
+<td><font bgcolor=""><a href="configuration.html"><img src="configuration.jpg"
+	alt=" Configuration " border="0"</a></font></td>
+<td><font bgcolor=""><a href="ldap.html"><img src="ldap.jpg"
+	alt=" LDAP " border="0"></a></font></td>
+<td><font bgcolor=""><a href="howto.html"><img src="howto.jpg"
+	alt=" HOWTO " border="0"></a></font></td>
+<td><font bgcolor=""><a href="reference.html"><img src="reference.jpg"
+	alt=" Reference " border="0"></a></font></td>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td width="10"></td>
+<td bgcolor="#ffffff" colspan="7" width="700">
+<font face="Helvetica">
+<br />
+<h1>Installation</h1>
+<p>
+<code>mod_authz_ldap</code> can only be installed as a
+<a href="#dso">dynamic shared object (DSO)</a>, the version
+<a href="#static">statically linked</a> into the apache server
+is no longer supported..
+After installation, proceed to the
+<a href="configuration.html">configuration</a>.
+</p>
+
+<h3><a name="configure">2.1. <code>configure</code> options</a></h3>
+<p>
+<code>mod_authz_ldap</code> uses <code>configure</code> to explore the
+system and set appropriate compiler and linker flags.
+There are a number of options available:
+<dl>
+<dt><code>--with-debug</code></dt>
+<dd>Include additional debugging code in the module.
+Use this only during testing, as the volume of debug output can be
+quite large and turn into a performance penalty.
+</dd>
+<dt><code>--with-openssl-path=<i>path-to-openssl</i></code></dt>
+<dd>The <code>configure</code> script tries to find the OpenSSL libraries
+in /usr/local/ssl.
+If you have them installed in some other directory,
+you should use this option to help configure find them.
+</dd>
+<dt><code>--with-cachesize=<i>cachesize-in-kb</i></code></dt>
+<dd>
+Switches on the LDAP cache with a given size.
+Note that the in current version of OpenLDAP, the cache does not work.
+</dd>
+<dt><code>--with-timeout=<i>timeout</i></code></dt>
+<dd>
+Sets the default time to live of an LDAP cache entry.
+</dd>
+<dt><code>--with-apxs=<i>path-to-apxs</i></code></dt>
+<dd>
+tells the configure script the path to the Apache DSO configuration
+utility.
+</dd>
+<dt><code>--disable-ssl</code></dt>
+<dd>
+makes sure no code interfacing with mod_ssl is included in the module,
+so it can be used as a simple LDAP authentication module in servers not
+configured with mod_ssl. Without this option, the module will not load
+into a server that has not already loaded mod_ssl.
+</dd>
+<dt><code>--with-sharedflag=<i>linker-flag-to-build-dso</i></dt>
+<dd>
+This option is a kludge to work around a bug in libtool included with apache2.
+That version of libtool does not emit the correct linker flags when asked,
+through the use of the option <code>-module</code>, to build a DSO. The
+link fails with unresolved symbols. <code>mod_authz_ldap</code> works around
+this problem by supplying <code>-shared</code> to the linker by default,
+which allows GNU ld to build a DSO. Other linkers, e.g. the Solaris platform
+linker, require a different option, which <code>mod_authz_ldap</code>
+really doesn't want to know about (this is libtool's task), so you'll have
+to provide the flag suitable for your linker with this flag if you are not
+using GNU ld.
+</dd>
+</dl>
+</p>
+
+<h4>Common problems</h4>
+<p><strong>Problems with openssl headers.</strong> <tt>mod_ssl.h</tt>
+in Apache2 includes the OpenSSL headers without any directory part like
+<pre>
+#include &lt;ssl.h>
+#include &lt;pem.h>
+</pre>
+but most systems need to prefix the filenames by <tt>openssl</tt>.
+So in order to compile successfully, you may have to add
+<code>/usr/include/openssl</code> to the compiler's include path, e.g.
+by saying
+<pre>
+CPPFLAGS="-I/usr/local/ssl/include/openssl"
+expor CPPFLAGS
+</pre>
+before running configure. An alternative is to use the
+<code>--with-openssl-path</code> directive.
+
+<h3><a name="dso">2.2. Install as a DSO</a></h3>
+<p>
+Configure the package as a DSO
+<pre>
+    <b>$</b> ./configure --with-apxs=<i>path-to-apxs</i>
+</pre>
+Set LDFLAGS appropriately if your LDAP libraries or not on the standard
+library search path. Then compile and install the support programs
+<pre>
+    <b>$</b> make
+    <b>$</b> su
+    <b>Password:</b>
+    <b>#</b> make install
+    <b>. . .</b>
+</pre>
+Starting with release 0.18, this will also install the module
+(previous releases required a separate <code>make module-install</code>).
+The installation does automatically activate the module in the default
+server configuration file. If the module is to be used in servers using
+some other configuration file, it should be activated by adding the following
+commands to the configuration file:
+<pre>
+    LoadModule authz_ldap_module   libexec/mod_authz_ldap.so
+    AddModule mod_authz_ldap.c
+</pre>
+</p>
+
+<h3><a name="static">2.3. Install as a statically linked module</a></h3>
+<p>
+As of version 0.16, building <b>mod_authz_ldap</b> is no longer
+supported. As most platforms are now supported by the DSO
+mechanism, which is much more flexible and convenient,
+there hardly is any need for the static build anymore.
+</p>
+<p>
+In case you need the static build nevertheless, you should download
+a version before 0.16 and try to use a modified version of the
+<font face="courier">Makefile.tmpl</font> on the current version.
+</p>
+
+</font>
+
+
+</td>
+<td width="10"></td>
+</tr>
+
+<tr><td colspan="9">&nbsp;</td></tr>
+
+<tr>
+<td width="10"></td>
+<td bgcolor="#ffffff" colspan="7">
+<font face="helvetica">
+&copy; 2001 <a href="mailto:andreas.mueller@othello.ch">Dr. Andreas M&uuml;ller</a>,
+<a href="http://www.othello.ch">Beratung und Entwicklung</a>
+</font>
+</td>
+<td width="10"></td>
+</tr>
+</table>
+

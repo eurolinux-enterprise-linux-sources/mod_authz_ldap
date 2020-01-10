@@ -1,0 +1,263 @@
+Release 0.26:
+	* fixed some minor bugs
+	* fixed some compile time problems
+	* Bernd Strebel contributed the AuthzLDAPSetGroupAuth directive,
+	  also fixes LDAP schema to work with newer OpenLDAP
+
+Release 0.25:
+	* added new method that also does ldap but uses the mapped
+	  name to bind, which is required for Active directory. It seems
+	  that once more Microsoft has gotten the bind syntax all wrong.
+
+Release 0.24:
+	* changed logic for configuration of authentication method and
+	  certificate mapping, I believe it is now much more transparent,
+	  but some directives have disappeared or changed
+		AuthzLDAPEngine			-> AuthzLDAPMethod
+						-> AuthzLDAPMapMethod
+		AuthzLDAPSetAuthorization	-> AuthzLDAPSetAuthorization
+		AuthzLDAPUseSerial		-> (use mapmethod issuerserial)
+		AuthzLDAPUseCertificate		-> (use method certificate)
+		AuthzLDAPUseLDAP		-> (use method ldap)
+	* change syntax for issuerDN and subjectDN to directoryString
+	  and caseExactMatch for EQUALITY. (Suggested by Christian Claveleira)
+	* added support for satisfy any/all in the authz functions
+	* added uid and cn as optional arguments to the map, because
+	  newer versions of OpenLDAP require that the naming attribute also
+	  be an attribute
+	* fixed cert2ldap to set the protocol version
+
+Release 0.23:
+	* fix a bug in configureit that cause -D flags to go to CFLAGS
+	  instead of CPPFLAGS. As a result, the module could not be compiled
+	  fuer Apache2
+	* converted to libtool, no longer using apxs to compile the module,
+	  as apache's libtool did not work in many situations. We are imitating
+	  what the PHP group is doing here
+	* added a patch by Victor S Grishchenko: allow a user to still 
+	  log in with userid and password if she does not present a cert,
+	  thanks Victor
+	* added a (large) patch by Julio Sanchez: allow mapping of certificates
+	  in active directory, and allow to map the user name that should
+	  overwrite the basic authentication header to any ldap attribute.
+	  Thanks Julio!
+
+Release 0.22:
+	* fixed download page (which still pointed to 0.20)
+	* documentation changes to reflect all the changes in this release
+	* some small bug fixes
+	* add configuration directive AuthzLDAPCacheConnection for caching
+	  connections (to allow .htaccess files to use mod_authz_ldap,
+	  which previously caused a file descriptor leak)
+	* changes for Apache 2: mod_ssl in Apache 2 does no longer use
+	  the EAPI, which was used in Apache 1 to store information about
+	  the client certificate. Instead, the client certificate data is
+	  accessible via the ssl_var_lookup function defined in mod_ssl.h.
+	  As a consequence, the logic previously handled in the mod_ssl patch
+	  has been folded into certmap.c (for apache2). Fortunately, this
+	  also works for apache1 (with the exception that there is no official
+	  header to define ssl_var_lookup, so we have to do it ourselves
+	  in the certmap.c file).
+	* converted from EAPI context variables for authz_ldap::userdn to
+	  apache notes table (which still works in apache2)
+	* added a configuration directive AuthzLDAPEngine that must be set to
+	  on if mod_authz_ldap should become active (allows AuthzLDAPServer
+	  to have a more reasonable default)
+	* added configuration directive to set ldap protocol version,
+	  required for OpenLDAP 2.1.5. Default set so that if LDAP_VERSION3
+	  symbol is defined, protocol version 3 is used. Otherwise, protocol
+	  version is not set at all.
+	* fix authzldap.ldif, the sample LDAP directory contents so that
+	  it becomes acceptable for OpenLDAP 2.1.5
+	* fix authzldap.schema so that it becomes acceptable for OpenLDAP
+	  2.1.5
+	* updated autoconf/automake to new versions
+
+Release 0.21:
+	* improve logging when entering and leaving the authz and auth
+	  methods so that it becomes easier to debug calls to handlers
+	  (prompted by a problem with coldfusion)
+	* improve debugging code in the filterexpand.c so that debugging
+	  filters becomes simpler
+
+Release 0.20:
+	* improved the READMEs in the subdirectories
+	* fixed two bugs pointed out by Michael Snell
+	* started adding filter expansions (%. expressions in filter 
+	  requirements)
+	* upgraded autoconf to 1.6 and automake to 2.?
+
+Release 0.19:
+	* documentation fix: AuthzLDAPMemberKey _has_ a default: member
+	* fix useldap to default to off (as documented), pointed out by
+	  Julio Sanchez Fernandez
+	* fix some debug messages that were produced even if debug code
+	  was not included
+	* make sure the group search scope is BASE if GroupBase and GroupKey
+	  are not set
+	* fix a documentation bug: if either GroupBase or GroupKey are not
+	  configured, the full group DN must be specified on require group
+	  statements
+
+Release 0.18:
+	* added a directive AuthzLDAPMemberKey for directories that don't
+	  use member as the attribute containing group member DNs
+	* fix a bug in group requirements that lead to multiple groups
+	  not working (related to next item), pointed out by Julio Sanchez
+	  Fernandez
+	* make requirements more consistent: requirements on the same
+	  line are or'ed together, as in other apache modules
+	  (suggested by Julio Sanchez Fernandez)
+	* fixed some alignments in configure.in
+	* updated the HOWTO which now is much more clear about the compiler
+	  and linker flag settings (suggested by Samuel Comte)
+	* module/Makefile now installs the module with make install, no
+	  separate make install-module needed any longer.
+
+Release 0.17:
+	* fix a bug pointed out by Michael Snell, dnp referenced in auth.c
+	  after it was freed.
+	* added a double authentication feature: verify a certificate, map
+	  it to a user node in LDAP, and verify the users's password.
+	  Feature suggested by Damien Awog-boro (Damien.Awog-boro AT
+	  barclayscapital.com)
+
+Release 0.16:
+	* reorganized the distribution with separate directories for 
+	  module, tools, documentation, ldap related stuff and mod_ssl
+	  patches
+	* changed naming of procedures and global variables so that all
+	  names begin with authz_ldap: when you pollute the namespace you
+	  should at least do it consistently
+	* split the very large mod_authz_ldap.c into several much smaller
+	  files
+	* Changed ap_getword_white to ap_getword_conf to allow for whitespace
+	  in user/group/etc requirements (problem noted and fix suggested
+	  by Matthew Stevenson)
+	* Modify the requirement for groupowner to group-owner to be more in
+	  line with require valid-user
+	* insert ap_note_basic_auth_failure(r) to produce a behaviour on
+	  authentication failures more consistent with other modules
+	  (problem reported by Eugene E. Prigorodov and some others,
+	  hope I got it right)
+
+Release 0.15:
+	* fix a bug in cert2ldap which caused binary certficates not to
+	  be added correctly to the directory
+	* add new authorization methods: filter, owner and groupowner,
+	  (features suggested by Tim Tassonis and Sean Marshall)
+	* fix a small bug in role authorization
+	* did some code cleanup
+
+Release 0.14:
+	* new authorization method: roles (feature suggested by Tim Tassonis)
+	* added missing file mod_authz_ldap.png to the distribution
+
+Release 0.13:
+	* produce a patch for apache_1.3.19 and mod_ssl-2.8.1-1.3.19
+	* the module cannot be compiled with openssl 0.9.3, as the macro
+	  PEM_read_bio_X509 nowadays uses a different number of parameters
+	* fix cert2ldap.c and certfind.c to use PEM_read_bio_X509 instead
+	  of PEM_read_bio_X509
+	* fix x509tomem.c to use BIO_get_mem_data 
+	* fix a broken link in the documentation
+
+Release 0.12:
+	* fix missing checks for ldap_memfree and such things in the new
+	  utility programs.
+	* fix a missing include for openssl/err.h in certfind.c
+
+Release 0.11:
+	* added manual pages for the two standalone programs
+	* added a program certfind that allows to search the directory for
+	  a certificate or a map entry.
+	* added a program cert2ldap which allows to add a certificate or
+	  the attributes needed for a authzLDAPmap entry to the directory.
+	* fixed the serial number conversion code that was broken in 0.10.
+	* added an option AuthzLDAPDirect, which directs mod_authz_ldap
+	  to take the user base DN and search with the scope specified
+	  there for the certificate received from the SSL connection.
+	  This is likely to be simpler, but not necessarily faster.
+
+Release 0.10:
+	* added experimental support to use the serial number from the
+	  ceritificate for the mapping. While issuerDN and subjectDN cannot
+	  guarantee uniqueness, issuerDN and serial can. Open issue: how
+	  to formulate the filter if the serial number is larger than an
+	  unsigned long?
+
+Release 0.9:
+	* fixed some typos in the documentation.
+	* modssl-patch.html was available on the web site, but missing from
+	  the distribution. Tried to make it more visible in the documentation.
+
+Release 0.8:
+	* clean up the configure script to use more standard functions to
+	  detect various ldap library calls
+	* added use of the ldap cache if available in the library. Note that
+	  the cache in openldap-2.0.7 does not really work. So production use
+	  of this feature should not be attempted at this time. This also
+	  includes two new configuration options to configure the cache.
+	* added a reconnect function in case the LDAP library doesn't handle
+	  this by itself
+	* BUG: the context variable authz_ldap::username was not properly
+	  initialized in an initial request, resulting in spurious data 
+	  being returned. This caused the authentication to sometimes fail.
+	  Note that subrequests do not map the user again, if it was already
+	  mapped in the main request.
+	* Improved the log so that the PID is now always included with the
+	  log message. This should simplify debugging of problems that relate
+	  to an individual LDAP connection.
+
+Release 0.7:
+	* fix a bug found by Torsten Hilbrich (torsten.hilbrich AT secunet.de):
+	  ldap_memfree was used to incorrectly free a pointer returned
+	  by ldap_first_attribute (author auf mod_authz_ldap should RTFM).
+
+Release 0.6:
+	* some typos in the documentation
+	* important bug: zero passwords correspond to anonymous binds and
+	  always succeed. (My opinion is that the RFC is not careful enough
+	  about this point. It says that the return code should inform the
+	  application about the state of the connection after the bind.
+	  However, it is quite a difference between an anonymous bind and
+	  a user having a 0 password, the result code should distinguish
+	  between the two).
+
+Release 0.5:
+	* removed a leftover fprintf statement 
+	* explained the necessary indexing for good performance
+
+Release 0.4:
+	* improve debugging for initialization functions 
+	* improved search algorithm for required libraries in configure
+	  under Solaris
+	* fixed two declaration bugs, missing prototypes and cast problems
+	* finally had a look at the request record, where one can easily
+	  determine whether a request is a proxy request or not from the
+	  proxyrequest member. Automatic detection of Proxy Authentication
+	  now works correctly. However, it does not work for reverse proxies,
+	  so the AuthzLDAPProxyAuthentication option will stay
+	* realized that for a correct certificate check, subject dn AND
+	  issuer DN have to be taken into account, this lead to many other
+	  changes 
+	* redesigned the group checking code
+	* improve change log, which was not properly updated in previous
+	  releases
+	* certificate authentication does not necessarily set the
+	  authorization header, this must explicitely be required by the
+	  AuthzLDAPSetAuthorization directive
+	* updated documentation
+	* added a HTML file describing how to patch mod_ssl to work with
+	  mod_authz_ldap
+
+Release 0.3:
+	* password aging had quite distorted logic, and was rewritten
+
+Release 0.2:
+	* fixed some bugs with not properly initialized variables, causing
+	  the server to seg fault
+
+Release 0.1:
+	* first release (version 0.1) of mod_authz_ldap
+

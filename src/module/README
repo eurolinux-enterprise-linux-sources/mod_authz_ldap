@@ -1,0 +1,18 @@
+Module
+------
+
+This directory contains the source code of the module. It contains the
+following files
+
+  mod_authz_ldap.h	global definitions, like the Apache module record
+  age.c			logic for password aging based on the last modified
+			timestamp
+  auth.c		LDAP authentication, using LDAP bind
+  authz.c		authorization based on the user's distinguished name
+  certmap.c		mapping a certificate to a user distinguished name
+  mod_authz_ldap.c	the core of the module, module record
+  modconf.c		configuration routines
+  utilities.c		some helpful functions used in several files
+  
+--
+$Id: README,v 1.2 2002/05/02 20:00:07 afm Exp $

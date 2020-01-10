@@ -1,0 +1,79 @@
+<html>
+<head>
+<title>mod_authz_ldap - Download</title>
+</head>
+
+<body bgcolor="#ffff00">
+
+<table cellpadding="0" cellspacing="0" border="0">
+<tr><td colspan="9"><img src="mod_authz_ldap.jpg"></td>
+<tr bgcolor="#ffff00">
+<td>&nbsp;</td>
+<td><font bgcolor=""><a href="index.html"><img src="introduction.jpg"
+	alt=" Introduction " border="0"></a></font></td>
+<td><font bgcolor=""><a href="download.html"><img src="download.jpg"
+	alt=" Download " border="0"></a></font></td>
+<td><font bgcolor=""><a href="installation.html"><img src="installation.jpg"
+	alt=" Installation " border="0"></a></font></td>
+<td><font bgcolor=""><a href="configuration.html"><img src="configuration.jpg"
+	alt=" Configuration " border="0"</a></font></td>
+<td><font bgcolor=""><a href="ldap.html"><img src="ldap.jpg"
+	alt=" LDAP " border="0"></a></font></td>
+<td><font bgcolor=""><a href="howto.html"><img src="howto.jpg"
+	alt=" HOWTO " border="0"></a></font></td>
+<td><font bgcolor=""><a href="reference.html"><img src="reference.jpg"
+	alt=" Reference " border="0"></a></font></td>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td width="10"></td>
+<td bgcolor="#ffffff" colspan="7" width="700">
+<font face="Helvetica">
+<br />
+<h1>Download</h1>
+<p>
+The current test version of
+<b>mod_authz_ldap</b> can be downloaded from
+</p>
+<center>
+<a href="http://authzldap.othello.ch/download/mod_authz_ldap-0.VeRsIoN.tar.gz">http://authzldap.othello.ch/download/mod_authz_ldap-0.VeRsIoN.tar.gz</a>
+</center>
+<center><a href="ftp://authzldap.othello.ch/mod_authz_ldap-0.VeRsIoN.tar.gz">ftp://authzldap.othello.ch/mod_authz_ldap-0.VeRsIoN.tar.gz</a>
+</center>
+<p>
+Previous versions are still available mainly for historical reasons:
+
+<font face="courier">
+<pre>
+   0.VeRsIo1    <a href="http://authzldap.othello.ch/download/mod_authz_ldap-0.VeRsIo1.tar.gz">mod_authz-ldap-0.VeRsIo1.tar.gz</a>
+   0.VeRsIo2    <a href="http://authzldap.othello.ch/download/mod_authz_ldap-0.VeRsIo2.tar.gz">mod_authz-ldap-0.VeRsIo2.tar.gz</a>
+   0.VeRsIo3    <a href="http://authzldap.othello.ch/download/mod_authz_ldap-0.VeRsIo3.tar.gz">mod_authz-ldap-0.VeRsIo3.tar.gz</a>
+   0.VeRsIo4    <a href="http://authzldap.othello.ch/download/mod_authz_ldap-0.VeRsIo4.tar.gz">mod_authz-ldap-0.VeRsIo4.tar.gz</a>
+   0.VeRsIo5    <a href="http://authzldap.othello.ch/download/mod_authz_ldap-0.VeRsIo5.tar.gz">mod_authz-ldap-0.VeRsIo5.tar.gz</a>
+   0.VeRsIo6    <a href="http://authzldap.othello.ch/download/mod_authz_ldap-0.VeRsIo6.tar.gz">mod_authz-ldap-0.VeRsIo6.tar.gz</a>
+   0.VeRsIo7    <a href="http://authzldap.othello.ch/download/mod_authz_ldap-0.VeRsIo7.tar.gz">mod_authz-ldap-0.VeRsIo7.tar.gz</a>
+</pre>
+</font>
+</td>
+</tr>
+
+<tr>
+<td colspan="9">&nbsp;</td>
+</tr>
+
+<tr>
+<td width="10"></td>
+<td bgcolor="#ffffff" colspan="7">
+
+<font face="helvetica">
+&copy; 2001 <a href="mailto:andreas.mueller@othello.ch">Dr. Andreas M&uuml;ller</a>,
+<a href="http://www.othello.ch">Beratung und Entwicklung</a>
+</font>
+
+</td>
+<td width="10"></td>
+</tr>
+</table>
+
+</body>
+</html>

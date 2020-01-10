@@ -1,0 +1,18 @@
+#! /bin/sh
+#
+# (c) 2000 Dr. Andreas Mueller, Beratung und Entwicklung
+#
+# $Id: webactivate.in,v 1.5 2003/11/18 10:01:29 afm Exp $
+#
+scp ../ChangeLog \
+	timon.othello.ch:/usr/local/apache/htdocs/authzldap.othello.ch/
+scp ../mod_authz_ldap-@VERSION@.tar.gz .message \
+	timon.othello.ch:/usr/local/apache/htdocs/authzldap.othello.ch/download
+HTML="configuration.html download.html howto.html index.html		\
+	installation.html reference.html ldap.html"
+JPG="configuration.jpg download.jpg howto.jpg installation.jpg		\
+	introduction.jpg ldap.jpg mod_authz_ldap.jpg reference.jpg"
+MISC="authzldap.txt mod_authz_ldap.HOWTO"
+
+scp ${HTML} ${JPG} ${MISC} \
+	timon.othello.ch:/usr/local/apache/htdocs/authzldap.othello.ch/

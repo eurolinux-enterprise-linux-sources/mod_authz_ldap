@@ -1,0 +1,11 @@
+TODO List for mod_authz_ldap
+
+* should add a document describing step by step configuration of all the
+  necessary components. the main document has become a bit unwieldy.
+  
+* Add a cache for all decisions that require ldap lookups, in particular
+  ldap bind decisions. Partially implementable by LDAP caching.
+
+--
+(c) 2000 Dr. Andreas Mueller, Beratung und Entwicklung
+$Id: TODO,v 1.6 2002/05/02 20:00:01 afm Exp $

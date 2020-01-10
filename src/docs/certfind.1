@@ -1,0 +1,71 @@
+.\"
+.\" @(#) $Id: certfind.1,v 1.1 2002/10/02 21:11:20 afm Exp $
+.\"
+.TH CERTFIND L "11/02/01" "MOD_AUTHZ_LDAP"
+.SH NAME
+certfind \- find an entry based on a certificate
+.SH SYNOPSIS
+certfind [
+.I options
+] [
+.I certificatefile
+]
+.SH OPTIONS
+.TP
+.BI \-h hostname
+connect to server
+.IR hostname .
+.TP
+.BI \-p port
+use port
+.I port
+instead of the usual LDAP port 389.
+.TP
+.B \-s
+use the subject distinguished name of the certificate and its
+issuer to search for the entry.
+.B \-n
+use the serial number of the certificate and its
+issuer to search for the entry.
+.TP
+.B \-d
+increase debug level.
+.TP
+.BI \-D targetdn
+add all the attributes specified to the entry with distinguished name
+.IR targetdn .
+.TP
+.BI \-b binddn
+bind as user
+.I binddn
+to the directory.
+.TP
+.BI \-w password
+use 
+.I password
+to bind to the directory.
+
+.SH DESCRIPTION
+.B Certfind
+searches the directory for a node either having a 
+.I userCertificate
+attribute with the given certificate as its value, or
+having an 
+.I issuerDN
+attribute with the DN of the certificate issuer, and
+either a
+.I subjectDN
+or a
+.I serialNumber
+attribute with the corresponding values from the certificate.
+The certificate is either specified as a 
+.I certificatefilename
+argument on the command line or read from standard
+input.
+
+.SH SEE ALSO
+.BR cert2ldap (1)
+
+.SH AUTHOR
+Andreas F. Mueller <andreas.mueller@othello.ch>
+

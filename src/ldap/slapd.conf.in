@@ -1,0 +1,30 @@
+#
+# example slapd.conf file for testing
+#
+# (c) 2001 Dr. Andreas Mueller, Beratung und Entwicklung
+#
+# $Id: slapd.conf.in,v 1.2 2002/09/27 22:30:48 afm Exp $
+#
+include         /usr/local/etc/openldap/schema/core.schema
+include         /usr/local/etc/openldap/schema/cosine.schema
+include         /usr/local/etc/openldap/schema/inetorgperson.schema
+include         /usr/local/etc/openldap/schema/nis.schema
+include         AUTHZLDAPHOME/ldap/authzldap.schema
+
+pidfile         AUTHZLDAPHOME/ldap/ldbm/slapd.pid
+argsfile        AUTHZLDAPHOME/ldap/ldbm/slapd.args
+
+#######################################################################
+# ldbm database definitions
+#######################################################################
+
+database        bdb
+suffix          "dc=othello,dc=ch"
+rootdn          "cn=root,dc=othello,dc=ch"
+rootpw          secret
+directory       AUTHZLDAPHOME/ldap/ldbm
+
+# Indices to maintain
+index   objectClass     eq
+lastmod on
+

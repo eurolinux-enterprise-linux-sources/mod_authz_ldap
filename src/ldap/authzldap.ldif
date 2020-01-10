@@ -1,0 +1,65 @@
+# othello,dc=ch
+dn: dc=othello,dc=ch
+objectClass: top
+objectClass: dcObject
+dc: othello
+
+#
+# People,dc=othello,dc=ch
+dn: ou=People,dc=othello,dc=ch
+objectClass: top
+objectClass: organizationalUnit
+ou: People
+
+# Group,dc=othello,dc=ch
+dn: ou=Group,dc=othello,dc=ch
+objectClass: organizationalUnit
+objectClass: top
+ou: Group
+
+# afm,People,dc=othello,dc=ch
+dn: uid=afm,ou=People,dc=othello,dc=ch
+objectClass: account
+objectClass: posixAccount
+objectClass: top
+cn: Andreas Mueller
+uid: afm
+uidNumber: 100
+gidNumber: 100
+userPassword:: cHc0NzEx
+homeDirectory: /home/afm
+loginShell: /usr/local/bin/bash
+gecos: Andreas F Mueller
+
+# AuthzLDAPCertmap,dc=othello,dc=ch
+dn: ou=AuthzLDAPCertmap,dc=othello,dc=ch
+objectClass: top
+objectClass: organizationalUnit
+ou: AuthzLDAPCertmap
+
+# afm,AuthzLDAPCertmap,dc=othello,dc=ch
+dn: uid=afm,ou=AuthzLDAPCertmap,dc=othello,dc=ch
+objectClass: top
+objectClass: authzLDAPmap
+issuerDN: /C=CH/ST=Schwyz/L=Altendorf/O=Othello/CN=Othello internal CA/Email=c
+ a@othello.ch
+subjectDN: /C=CH/ST=Schwyz/L=Altendorf/O=Othello/CN=Andreas Mueller/Email=afm@
+ othello.ch
+owner: uid=afm,ou=People,dc=othello,dc=ch
+uid: afm
+
+# group1,Group,dc=othello,dc=ch
+dn: cn=group1,ou=Group,dc=othello,dc=ch
+objectClass: top
+objectClass: groupOfNames
+cn: group1
+member: uid=afm,ou=People,dc=othello,dc=ch
+member: uid=jackie,ou=People,dc=othello,dc=ch
+
+# group2,Group,dc=othello,dc=ch
+dn: cn=group2,ou=Group,dc=othello,dc=ch
+objectClass: top
+objectClass: groupOfNames
+cn: group2
+member: uid=jackie,ou=People,dc=othello,dc=ch
+

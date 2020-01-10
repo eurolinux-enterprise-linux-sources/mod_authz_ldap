@@ -1,0 +1,7 @@
+This directory contains various releases of mod_authz_ldap, a certificate
+authorization solution for the Apache web server. Please visit the
+mod_authz_ldap web site at
+
+	http://authzldap.othello.ch/
+
+for details.

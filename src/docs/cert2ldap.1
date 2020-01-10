@@ -1,0 +1,107 @@
+.\"
+.\" @(#) $Id: cert2ldap.1,v 1.2 2003/11/16 16:42:53 afm Exp $
+.\"
+.TH CERT2LDAP L "21/04/01" "MOD_AUTHZ_LDAP"
+.SH NAME
+cert2ldap \- import a certificate into an LDAP server
+.SH SYNOPSIS
+cert2ldap [
+.I options
+] [
+.I certificatefile
+]
+.SH OPTIONS
+.TP
+.BI \-h hostname
+connect to server
+.IR hostname .
+.TP
+.BI \-p port
+use port
+.I port
+instead of the usual LDAP port 389.
+.TP
+.B \-i 
+store the issuer distinguished name of the certificate in the directory.
+.TP
+.B \-s
+store the subject distinguished name of the certificate in the
+directory.
+.TP
+.B \-c
+store the certificate in binary form in the directory.
+.TP
+.B \-n
+store the serial number of the certificate in the directory.
+.TP
+.B \-d
+increase debug level.
+.TP
+.BI \-D targetdn
+add all the attributes specified to the entry with distinguished name
+.IR targetdn .
+.TP
+.BI \-b binddn
+bind as user
+.I binddn
+to the directory.
+.TP
+.BI \-w password
+use 
+.I password
+to bind to the directory.
+.TP
+.BI \-o owner
+create a certificate mapping entry that specifies 
+.I owner
+as the owner of the certificate.
+.TP
+.BI \-V version
+use LDAP protocol version
+.I version
+to connect to the server.
+.TP
+.B \-B
+use "userCertifiate;binary" format for update, some servers seem
+to require this, others are happy without.
+
+.SH DESCRIPTION
+.B Cert2ldap
+is used to import a certificate into an LDAP directory in such a
+as to allow the 
+.B mod_authz_ldap
+Apache module to authenticate and authorize users based on their
+certificates.
+The certificate is either specified as a 
+.I certificatefilename
+argument on the command line or read from standard
+input.
+There are essentially two ways to use the program:
+either a certificate is added as a
+.I userCertifcate
+attribute to a users node, or a certificate mapping node
+is added somewhere else in the directory, referencing the
+user.
+
+The second form is active as soon as one if the options
+.BR -i ,
+.BR -s ,
+.BR -o
+or 
+.BR -n
+are used. The first form uses only the 
+.B -c
+option. The correct configuration of the entires can be checked using
+the 
+.BR certfind (1)
+program.
+
+If the node to be updated does not exist yet, a minimal node is created.
+However this is only marginally useful in the case of a node containing
+the certificate proper.
+.SH SEE ALSO
+.BR certfind (1)
+
+.SH AUTHOR
+Andreas F. Mueller <andreas.mueller@othello.ch>
+

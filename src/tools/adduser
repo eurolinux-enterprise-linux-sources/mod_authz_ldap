@@ -1,0 +1,33 @@
+#! /bin/sh
+#
+# add necessary nodes for ldap user authentication tests
+#
+# (c) 2000 Dr. Andreas Mueller, Beratung und Entwicklung
+#
+# $Id: adduser,v 1.1 2001/08/25 15:54:06 afm Exp $
+#
+ldapadd -c -D cn=root,dc=othello,dc=ch -w secret <<EOF
+dn: uid=afm,ou=People,dc=othello,dc=ch
+objectclass: account
+objectclass: posixAccount
+objectclass: top
+cn: Andreas Mueller
+uid: afm
+uidNumber: 100
+gidNumber: 100
+userpassword: pw4711
+homeDirectory: /home/afm
+loginShell: /usr/local/bin/bash
+gecos: Andreas F Mueller
+
+EOF
+
+cat <<EOF
+You can now add user's certificates with the command
+
+    $ ./cert2ldap -d -c -b cn=root,dc=othello,dc=ch -w secret 		\\
+		-D uid=afm,ou=People,dc=othello,dc=ch 			\\
+		/usr/local/ssl/newcert.pem
+EOF
+
+exit 0

@@ -1,0 +1,148 @@
+*** ssl_engine_kernel.c.old	Sun Apr  1 22:11:58 2001
+--- ssl_engine_kernel.c	Sun Apr  1 22:27:16 2001
+***************
+*** 216,221 ****
+--- 216,224 ----
+       * Predefine some client verification results
+       */
+      ap_ctx_set(fb->ctx, "ssl::client::dn", NULL);
++     ap_ctx_set(fb->ctx, "ssl::client::serial", NULL);
++     ap_ctx_set(fb->ctx, "ssl::client::issuer::dn", NULL);
++     ap_ctx_set(fb->ctx, "ssl::client::certificate", NULL);
+      ap_ctx_set(fb->ctx, "ssl::verify::error", NULL);
+      ap_ctx_set(fb->ctx, "ssl::verify::info", NULL);
+      SSL_set_verify_result(ssl, X509_V_OK);
+***************
+*** 375,380 ****
+--- 378,435 ----
+              cp = X509_NAME_oneline(X509_get_subject_name(xs), NULL, 0);
+              ap_ctx_set(fb->ctx, "ssl::client::dn", ap_pstrdup(conn->pool, cp));
+              free(cp);
++ 
++ 	    cp = X509_NAME_oneline(X509_get_issuer_name(xs), NULL, 0);
++ 	    ap_ctx_set(fb->ctx, "ssl::client::issuer::dn",
++ 	        ap_pstrdup(conn->pool, cp));
++ 	    free(cp);
++ 
++ 	    /* the following code is adapted from crypto/asn1/t_x509.c  */
++ 	    /* from the openssl distribution                            */
++ 	    do {        /* we open a block here only to be allowed to   */
++ 			/* declare ASN1_INTEGER *bs                     */
++ 		ASN1_INTEGER *bs;
++ 		char *cp1;
++ 		int i;
++ 
++ 		bs = X509_get_serialNumber(xs);
++ 		cp1 = cp = ap_palloc(conn->pool, 1 + (3 * bs->length));
++ 		memset(cp, 0, 1 + (3 * bs->length));
++ 		if (bs->type == V_ASN1_NEG_INTEGER) {
++ 			*(cp1++) = '-';
++ 		}
++ 		for (i = 0; i < bs->length; i++) {
++ 			if (i) *(cp1++) = ':';
++ 			ap_snprintf(cp1, 3, "%02x", bs->data[i]); cp1 += 2;
++ 		}
++ 		ap_ctx_set(fb->ctx, "ssl::client::serial", cp);
++ 	    } while (0);
++ 
++ 	    /* add the whole certificate in quoted form to the context  */
++ 	    do {
++ 		BIO *bio_mem;
++ 		int l, j;
++ 		unsigned char *v;
++ 		char *cp, *p;
++ 
++ 		/* read the data from the certificate                   */
++ 		bio_mem = BIO_new(BIO_s_mem());
++ 		i2d_X509_bio(bio_mem, xs);
++ 		l = BIO_ctrl_pending(bio_mem);
++ 		v = ap_palloc(conn->pool, l);
++ 		BIO_read(bio_mem, v, l);
++ 		BIO_free(bio_mem);
++ 
++ 		/* quote the whole stuff                                */
++ 		cp = ap_palloc(conn->pool, l * 3 + 1);
++ 		p = cp;
++ 		for (j = 0; j < l; j++) {
++ 		    ap_snprintf(p, 4, "\\%02x", (unsigned char)v[j]); p+= 3;
++ 		}
++ 
++ 		/* return the quoted certificate in the context         */
++ 		ap_ctx_set(fb->ctx, "ssl::client::certificate", cp);
++ 	    } while (0);
+          }
+  
+          /*
+***************
+*** 1001,1006 ****
+--- 1056,1113 ----
+              ap_ctx_set(r->connection->client->ctx, "ssl::client::dn", 
+                         ap_pstrdup(r->connection->pool, cp));
+              free(cp);
++ 	    cp = X509_NAME_oneline(X509_get_issuer_name(cert), NULL, 0);
++ 	    ap_ctx_set(r->connection->client->ctx, "ssl::client::issuer::dn",
++ 	       ap_pstrdup(r->connection->pool, cp));
++ 	    free(cp);
++ 	    /* the following code is adapted from crypto/asn1/t_x509.c  */
++ 	    /* from the openssl distribution                            */
++ 	    do {        /* we open a block here only to be allowed to   */
++ 		/* declare ASN1_INTEGER *bs                     */
++ 		ASN1_INTEGER *bs;
++ 		char *cp1;
++ 		int i;
++ 
++ 		bs = X509_get_serialNumber(cert);
++ 		cp1 = cp = ap_palloc(r->connection->pool, 1 + (3 * bs->length));
++ 		memset(cp, 0, 1 + (3 * bs->length));
++ 		if (bs->type == V_ASN1_NEG_INTEGER) {
++ 			*(cp1++) = '-';
++ 		}
++ 		for (i = 0; i < bs->length; i++) {
++ 			if (i) *(cp1++) = ':';
++ 			ap_snprintf(cp1, 3, "%02x", bs->data[i]); cp1 += 2;
++ 		}
++ 		ap_ctx_set(r->connection->client->ctx,
++ 			"ssl::client::serial", cp);
++ 	    } while (0);
++ 
++ 	    /* add the whole certificate in quoted form to the context  */
++ 	    do {
++ 		BIO *bio_mem;
++ 		int l, j;
++ 		unsigned char *v;
++ 		char *cp, *p;
++ 
++ 		/* read the data from the certificate                   */
++ 		bio_mem = BIO_new(BIO_s_mem());
++ 		i2d_X509_bio(bio_mem, cert);
++ 		l = BIO_ctrl_pending(bio_mem);
++ 		v = ap_palloc(r->connection->pool, l);
++ 		BIO_read(bio_mem, v, l);
++ 		BIO_free(bio_mem);
++ 
++ 		/* quote the whole stuff                                */
++ 		cp = ap_palloc(r->connection->pool, l * 3 + 1);
++ 		p = cp;
++ 		for (j = 0; j < l; j++) {
++ 		    ap_snprintf(p, 4, "\\%02x", (unsigned char)v[j]); p+= 3;
++ 		}
++ 
++ 		/* return the quoted certificate in the context         */
++ 		ap_ctx_set(r->connection->client->ctx,
++ 			"ssl::client::certificate", cp);
++ 	    } while (0);
+          }
+  
+          /*
+***************
+*** 1505,1510 ****
+--- 1612,1620 ----
+          ssl_log(s, SSL_LOG_ERROR, "Certificate Verification: Error (%d): %s",
+                  errnum, X509_verify_cert_error_string(errnum));
+          ap_ctx_set(conn->client->ctx, "ssl::client::dn", NULL);
++         ap_ctx_set(conn->client->ctx, "ssl::client::serial", NULL);
++         ap_ctx_set(conn->client->ctx, "ssl::client::issuer::dn", NULL);
++         ap_ctx_set(conn->client->ctx, "ssl::client::certificate", NULL);
+          ap_ctx_set(conn->client->ctx, "ssl::verify::error",
+                     (void *)X509_verify_cert_error_string(errnum));
+      }

@@ -1,0 +1,23 @@
+#! /bin/sh
+#
+# Add base nodes to the directory that implement the certificate to user
+# map. To add the users themselves, you should use the cert2ldap utility.
+#
+# (c) 2000 Dr. Andreas Mueller, Beratung und Entwicklung
+#
+# $Id: addcertmap,v 1.1 2001/08/25 15:54:06 afm Exp $
+#
+ldapadd -c -D cn=root,dc=othello,dc=ch -w secret <<EOF
+dn: ou=AuthzLDAPCertmap,dc=othello,dc=ch
+objectclass: top
+
+EOF
+
+cat <<EOF
+You can now add user's certificate mappings with the command
+
+    # cert2ldap -i -s -n -b cn=root,dc=othello,dc=ch -w secret 		\\
+	-D uid=afm,ou=AuthzLDAPCertmap,dc=othello,dc=ch			\\
+	-o uid=afm,ou=People,dc=othello,dc=ch afm.crt
+
+exit 0

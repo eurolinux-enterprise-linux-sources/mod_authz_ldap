@@ -1,0 +1,720 @@
+<html>
+<head>
+<title>mod_authz_ldap - configuration</title>
+</head>
+<body bgcolor="#ffff00">
+
+<table cellpadding="0" cellspacing="0" border="0">
+<tr><td colspan="9"><img src="mod_authz_ldap.jpg"></td>
+<tr bgcolor="#ffff00">
+<td>&nbsp;</td>
+<td><font bgcolor=""><a href="index.html"><img src="introduction.jpg"
+	alt=" Introduction " border="0"></a></font></td>
+<td><font bgcolor=""><a href="download.html"><img src="download.jpg"
+	alt=" Download " border="0"></a></font></td>
+<td><font bgcolor=""><a href="installation.html"><img src="installation.jpg"
+	alt=" Installation " border="0"></a></font></td>
+<td><font bgcolor=""><a href="configuration.html"><img src="configuration.jpg"
+	alt=" Configuration " border="0"></a></font></td>
+<td><font bgcolor=""><a href="ldap.html"><img src="ldap.jpg"
+	alt=" LDAP " border="0"></a></font></td>
+<td><font bgcolor=""><a href="howto.html"><img src="howto.jpg"
+	alt=" HOWTO " border="0"></a></font></td>
+<td><font bgcolor=""><a href="reference.html"><img src="reference.jpg"
+	alt=" Reference " border="0"></a></font></td>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td width="10"></td>
+<td bgcolor="#ffffff" colspan="7" width="700">
+<font face="helvetica">
+<br />
+<h1><a name="configuration">Configuration</a></h1>
+<p>
+<code>mod_authz_ldap</code>  is configured through a set of directives
+on the directory level. In particular, the server creates an LDAP server
+connection for each directory configuration. Subsequent requests to
+the same directory do not create a new LDAP connection, except when
+Basic Authentication is done against the directory, as this is done
+through a bind call in a separate connection each time authentication
+is necessary.
+</p>
+<p>
+If <code>mod_authz_ldap</code> should accept that other authorization
+modules may grant access to a user although <code>mod_authz_ldap</code>
+has denied it, it must be denied authority by the command
+<font face="courier">
+<pre>
+    <a href="reference.html#AuthzLDAPAuthoritative">AuthzLDAPAuthoritative</a> off
+</pre>
+</font>
+The default is that <code>mod_authz_ldap</code> is authoritative.
+</p>
+
+<h2><a name="ldapserver">1. Configuring an LDAP Server</a></h2>
+<p>
+Whenever <code>mod_authz_ldap</code> is supposed to authenticate or
+authorize (if the user was authenticated by a certificate, only
+the authorization part is left to the module) a user, it needs
+to contact an LDAP directory. The following directives configure
+the directory:
+</p>
+<p>
+<font face="courier">
+<pre>
+    <a href="reference.html#AuthzLDAPServer">AuthzLDAPServer</a>         <i>server[:port]</i>
+    <a href="reference.html#AuthzLDAPBindDN">AuthzLDAPBindDN</a>         <i>DN_to_bind_as</i>
+    <a href="reference.html#AuthzLDAPBindPassword">AuthzLDAPBindPassword</a>   <i>Password_to_bind_with</i>
+</pre>
+</font>
+If no server is configured, a server on the local host on the standard
+LDAP port 389 is assumed. If no bind credentials are defined, an
+anonymous bind is performed.
+</p>
+
+<h2><a name="ldapauth">2. Configure LDAP User Authentication</a></h2>
+<p>
+LDAP User Authentication becomes active when the
+<a href="reference.html#AuthzLDAPMethod">AuthzLDAPMethod</a> directive
+is set to <i>ldap</i>.
+</p>
+<p>
+User authentication through basic authentication against an LDAP
+directory is by default active if <code>AuthName</code> and
+<code>AuthType</code> are defined for a directory or location.
+It works as follows:
+<ol>
+<li>
+If the user search scope has been set to something other than
+<code>base</code>, a query is performed from the configured user base DN
+for a node with the attribute <code>uid</code> set to the name
+entered by the user in the login dialog. The user's distinguished
+name is set to the distinguished name of the node found, provided
+the search returned a single node.
+If the user search scope was <code>base</code>, then the distinguished
+name is constructed from the <code>userkey</code> (normally <code>uid</code>),
+the username from the dialog and the user search base.
+<li>
+The password is verified by binding to the directory as the user
+whose distinguished name was found in the previous step, with the
+password from the login dialog.
+<li>
+If the authentication succeeded, additional requirements are
+verified:
+<ul>
+<li>
+If password aging is set by a <code>require age</code> directive,
+the last modification timestamp is checked as configured as
+described in section 3.5 on password expiration below.
+<li>
+If particular users are required, they are verified in this step.
+If the user name does not seem to have the format of a distinguished
+name, a search in the directory is performed first using the same
+algorithm as for the verification of the password.
+<li>
+If some group membership is required, the group name is searched for
+and membership the user in the group verified.
+</ul>
+</ol>
+As one can see, the module needs quite some additional information
+to perform all these tasks.
+</p>
+<p>
+As one can see, <code>mod_authz_ldap</code> needs additional information
+besides the <a href="#ldapserver">LDAP server</a>
+to be able to
+<ol>
+<li>
+Find the user in the directory:
+<font face="courier">
+<pre>
+    <a href="reference.html#AuthzLDAPUserKey">AuthzLDAPUserKey</a>     <i>UID_attribute_name_in_DN</i>
+    <a href="reference.html#AuthzLDAPUserBase">AuthzLDAPUserBase</a>    <i>DN_of_user_subtree</i>
+    <a href="reference.html#AuthzLDAPUserScope">AuthzLDAPUserScope</a>   <i>base|onelevel|subtree</i>
+</pre></font>
+The user node in the DIT below the node specified by the
+<a href="reference.html#AuthzLDAPUserBase"><code>AuthzLDAPUserBase</code></a> directive is expected to have an attribute
+named by the value of <a href="reference.html#AuthzLDAPUserKey"><code>AuthzLDAPUserKey</code></a>, the value
+of which is supposed to be the user id from the basic authentication.
+The default search scope for a user is <i>base</i>.
+In that case, the distinguished name of the user will
+be of the form <code><i>userkey</i>=<i>uid</i>,<i>userbase</i></code>.
+If none of the above values are set, the user must enter his/her
+distinguished name in the password dialog.
+<li>
+Find the group for the user:
+see the <a href="#group">section 4. on group verification</a>
+below for details.
+</ol>
+</p>
+
+<p>
+After successful authentication, the distinguished name of the user
+is placed in the authorization header. Subsequent authorization
+modules must therefore be able to deal with a distinguished name
+as the user id.
+</p>
+<p>
+A <code>require user</code> directive will search for the user
+according to the settings above and verify that exactly one user
+is returned an matches the distinguished name obtained from the
+LDAP authentication. If the <code>AuthzLDAPUser*</code> attributes
+are not set, a <code>require user</code> statement must specify the
+full distinguished name of a user.
+</p>
+
+<h2><a name="certificates">3. Configure Certificate Mapping</a></h2>
+<p>
+To active certificate mapping, set the
+<a href="reference.html#AuthzLDAPMapMethod">AuthzLDAPMapMethod</a>
+directive.
+</p>
+<p>
+Certificate mapping tries to find a user based on the subject
+and issuer DN. As uniqueness of distinguished names of subjects
+across CAs is not guaranteed, only the pairs <code>(issuer, subject)</code>
+or <code>(issuer, serial)</code> are unique.
+</p>
+<p>
+The LDAP server has to be prepared to perform this mapping. It needs to
+contain nodes of the following type (described here in old
+openldap version 1 notation):
+<font face="courier">
+<pre>
+attribute	issuerDN	ces
+attribute	subjectDN	ces
+
+objectclass	certificatemap
+	requires
+		objectClass,
+		issuerDN,
+		owner
+	allows
+		subjectDN,
+		serialNumber,
+		userCertificate
+</pre>
+</font>
+<p>
+Although it looks as both subjectDN and serialNumber can be omitted,
+one of them is needed (see the discussion of the
+<a href="reference.html#AuthzLDAPUseSerial">AuthzLDAPUseSerial</a>
+directive), but this cannot be expressed in the above syntax.
+A similar remark applies to the OpenLDAP syntax below.
+</p>
+
+<p>
+A definition for the attributes <code>issuerDN</code> and
+<code>subjectDN</code> and for the objectclass certificatemap
+should be added to the directory server. Openldap version 1 users
+can use the file authzldap.slapd.conf file for this purpose, version 2
+users will use authzldap.schema. The latter contains official object
+IDs.
+</p>
+
+<font face="courier" size="-1">
+<pre>
+attributetype ( 1.3.6.1.4.1.4263.5.1 NAME 'issuerDN'
+	DESC 'The user friendly version of the distinguished name of the 
+              issuer of a certificate'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.40 SINGLE-VALUE )
+
+attributetype ( 1.3.6.1.4.1.4263.5.2 NAME 'subjectDN'
+	DESC 'The user friendly version of the distinguished name of
+              the subject of a certificate'
+	EQUALITY caseExactIA5Match
+	SYNTAX 1.3.6.1.4.1.1466.115.121.1.40 SINGLE-VALUE )
+
+objectclass ( 1.3.6.1.4.1.4263.5.3 NAME 'authzLDAPmap'
+	DESC 'Map Entry for mod_authz_ldap'
+	SUP top AUXILIARY
+	MUST ( issuerDN $ owner )
+	MAY ( subjectDN $ serialNumber $ userCertificate )
+</pre>
+</font>
+
+<p>
+Certificate Mapping searches for a node in a subtree of the directory
+that has issuerDN and subjectDN as read from the certificate.
+It is configured through the following directives:
+</p>
+
+<p>
+<font face="courier">
+<pre>
+    <a href="reference.html#AuthzLDAPMapMethod">AuthzLDAPMapMethod</a> <i>certificate|issuerserial|issuersubject</i>
+    <a href="reference.html#AuthzLDAPMapBase">AuthzLDAPMapBase</a>        <i>base_dn_for_search_for_certificate_dn</i>
+    <a href="reference.html#AuthzLDAPMapScope">AuthzLDAPMapScope</a>       <i>base|onelevel|subtree</i>
+</pre>
+</font>
+This only makes sense, if <a href="http://www.modssl.org">mod_ssl</a>
+has been configured to request a client certificate through the SSLRequireSSL
+option (see the <a href="http://www.modssl.org">mod_ssl</a>
+documentation for details).
+<font face="courier">
+<pre>
+    SSLRequireSSL
+</pre>
+</font>
+While earlier releases of this module read the subjectDN from the
+basic authentication header, they now read it from the mod_ssl context,
+as all the variables used for the mapping.
+</p>
+<p>
+Last, but not least, it is possible to directly match a user against
+her certificate. However, this requires that the directory server is
+able to perform an equality match for the <code>userCertificate</code>
+attribute.
+This is not the case by default in OpenLDAP, but can be enabled by changing
+the definition of <code>userCertificate</code> in <code>core.schema</code>.
+Change the definition from
+<font face="courier">
+<pre>
+attributetype ( 2.5.4.36 NAME 'userCertificate'
+        SYNTAX 1.3.6.1.4.1.1466.115.121.1.8 )
+</pre>
+</font>
+to
+<font face="courier">
+<pre>
+attributetype ( 2.5.4.36 NAME 'userCertificate'
+        EQUALITY octetStringMatch
+        SYNTAX 1.3.6.1.4.1.1466.115.121.1.40 )
+</pre>
+</font>
+Strictly speaking, this violates some generally accepted schema
+standards, but it is so immensly useful.
+</p>
+<p>
+<code>mod_authz_ldap</code> can now directly match the certificate if
+the directive <a href="reference.html#AuthzLDAPMapMethod">AuthzLDAPMapMethod</a>
+is set to <i>certificate</i>.
+In this case, the module performs a search under the
+the base specified by
+<a href="reference.html#AuthzLDAPUserBase"><code>AuthzLDAPUserBase</code></a>
+with scope as set by
+<a href="reference.html#AuthzLDAPUserScope"><code>AuthzLDAPUserScope</code></a>
+for a user having a <code>userCertificate</code> attribute with the same
+certificate as the SSL client supplied.
+</p>
+<p>
+<font size="-1"><b>Note:</b> <code>+FakeBasicAuth</code> is no longer
+needed for certificate authentication.
+The module finds the subject and issuer distinguished names from
+the SSL context, there is no necessity to misuse a fake basic authentication
+any longer.
+If <code>+FakeBasicAuth</code> is specified, the basic authentication
+will simply be overwritten wherever the module is active.
+</font>
+</p>
+
+<p>It is possible to request both basic authentication with
+LDAP credentials and a certificate from a user, by setting
+<a href="reference.html#AuthzLDAPMapMethod"><code>AuthzLDAPMapMethod</code></a>
+to <i>both</i>.
+
+<h2><a name="group">4. Configure Group Verification</a></h2>
+<p>
+The <code>require group</code> directive in the context of
+the <code>mod_authz_ldap</code> module asks to verify membership
+of a user in a group defined in the LDAP directory. The group
+must be of objectclass <code>groupOfNames</code>, the members
+must be defined in <code>member</code> attributes, which have
+distinguished names of users as values.
+</p>
+<p>
+<font face="courier">
+<pre>
+    <a href="reference.html#AuthzLDAPGroupBase">AuthzLDAPGroupBase</a>    <i>base_for_onlevel_group_search</i>
+    <a href="reference.html#AuthzLDAPGroupKey">AuthzLDAPGroupKey</a>     <i>name_attribute_of_group</i>
+</pre>
+</font>
+Groups are expected to have a distinguished name of the form
+<font face="courier">
+<pre>
+    <i>groupkey</i>=<i>groupkeyvalue</i>,<i>groupbase</i>
+</pre>
+</font>
+A user is accepted if the group has a <code>member</code> attribute
+with current user's distinguished name as value.
+This can be changed using the 
+<a href="reference.html#AuthzLDAPMemberKey">AuthzLDAPMemberKey</a>
+directive.
+</p>
+<p>
+If either directive is not configured, the require statement
+must specify the full distinguished name of a group.
+</p>
+
+<h2>5. Configure Roles and Filters</h2>
+<p>
+Starting with release 0.14, <code>mod_authz_ldap</code> can verify
+roles of a user. In the most general form, a role is a required value
+of an attribute of the user's node. <code>mod_authz_ldap</code>
+simply needs to know the name of the attribute, which can be
+specified with the configuration directive
+<font face="courier">
+<pre>
+    <a href="reference.html#AuthzLDAPRoleAttributeName">AuthzLDAPRoleAttributeName</a> <i>attrname</i>
+</pre>
+</font>
+If this is set, you can include a directive
+<font face="courier">
+<pre>
+    require role <i>rolename</i>
+</pre>
+</font>
+in the server configuration file, which will cause a user to be allowed only
+if he has an attribute of name <i>attrname</i> with  value <i>rolename</i>.
+</p>
+<p>
+Note that <code>*</code> is a valid value for the role name, this results
+in the user being accepted if he simply has that attribute. This can
+be used e.g. to accept all users that have a mailbox (if some attribute
+contains the name of his mailbox). Substring matches are also possible,
+on could accept a user exactly if she has a mailbox in a given domain,
+if an attribute <code>mailboxhost</code> contains the mailbox host.
+A requirement for a role of the form <code>*.dom.ain</code> will do the
+trick.
+This generality of the role mechanism can often save you from having to
+extend the schema and define a special role attribute.
+</p>
+<p>
+Even greater generality is offered by the <code>require filter</code>
+directive of the form
+<font face="courier">
+<pre>
+    require filter [ <i>SCOPE</i> ] <i>filter-expression</i>
+</pre>
+</font>
+The <code><i>SCOPE</i></code> must be one of the strings
+<code><i>BASE</i></code>,
+<code><i>ONLEVEL</i></code> or <code><i>SUBTREE</i></code>.
+If the word after <code>filter</code> is not one of these strings,
+it is assumed that the scope was not specified. In this case, the default
+of <code><i>BASE</i></code> will be used and the rest of the line is
+used as a filter expression.
+The requirement succeeds if the filter returns something, it fails if
+nothing is returned by the filter, or if the filter causes an LDAP error.
+</p>
+<p>
+The <i>filter-expression</i> does not need to be static, the module is
+able to replace certain strings in the filter by information retrieved
+from the request. The following replacements are currently implemented:
+<dl>
+<dt>%%</dt>
+<dd>a literal percent sign (%)</dd>
+<dt>%f</dt>
+<dd>The name of the file requested.</dt>
+<dt>%m</dt>
+<dd>the request method (GET, POST, ...), so that we can control via ldap
+what types of request a user can perform.
+<dt>%r</dt>
+<dd>The name or IP address of the requesting client, as in the apache
+access log (so only the address if client name lookup is disabled).</dd>
+<dt>%s</dt>
+<dd>the server name</dd>
+<dt>%t</dt>
+<dd>The current time in the format YYYYMMDDhhmmss</dd>
+</dl>
+</p>
+
+<h2>6. Configure Authorization based on File Ownership</h2>
+<p>
+In some applications, it is necessary to base authorization decisions on
+file ownership. 
+Unfortunately, as the apache process runs with rather low privileges,
+ordinary access control mechanisms are not suitable. 
+However, using the ``<code>require owner</code>'' and
+``<code>require group-owner</code>'' directives, one can restrict access to
+a file to the owner or members of the group of a file. 
+This model of course assumes Unix file permissions, and is inherently
+not portable.
+This is why this functionality must be explicitely enabled using
+the <code>--with-owner</code> configuration flags.
+</p>
+
+<h2>7. Configure Password Expiration</h2>
+<p>
+For password aging, <code>mod_authz_ldap</code> must have a way to
+find out the last modification time of the password. The user entry
+in the directory needs to have an attribute for that. With OpenLDAP,
+the option <code>lastmod on</code> needs to be set in the <code>slapd</code>
+configuration file. The configuration directive
+<code>AuthzLDAPModifyKey</code> must be specified as follows:
+<font face="courier">
+<pre>
+    <a href="reference.html#AuthzLDAPModifyKey">AuthzLDAPModifyKey</a> <i>modifytimestamp</i>
+</pre>
+</font>
+</p>
+<p>
+By <code>require</code>ing a maximal age, only users that have modifed their
+password recently enough will be accepted:
+<font face="courier">
+<pre>
+    require age 3.5
+</pre>
+</font>
+This denies users access that have last changed their password more
+than 3.5 days ago.
+</p>
+
+<h2>8. Proxy Authentication</h2>
+<p>
+The module can also be used for proxy authentication.
+The module will normally recognize automatically whether proxy authentication
+or normal authentication is in effect. 
+In cases where it may not be clear which kind of authentication
+is happening, the the flag <a href="reference.html#AuthzLDAPProxyAuthentication"><code>AuthzLDAPProxyAuthentication</code></a>
+must be set to <code>on</code> for proxy authentication, and to
+<code>off</code> for normal authentication.
+One <a href="#transpauth">such case</a> is a <a href="#reverse">reverse proxy</a>,
+which works as a proxy, but authenticates as a server.
+</p>
+
+<h2>9. Miscellaneous</h2>
+<h3><a name="logging">Logging</a></h3>
+<p>
+The <code>mod_authz_ldap</code> module has its own log level, which is
+set by default to LOG_DEBUG. If the log level of the server is set to
+<code>debug</code>, all the information available from the module will
+be logged to the error log. However, the log information flowing from
+the module can be reduced by setting a different log level with the
+<a href="reference.html#AuthzLDAPLogLevel"><code>AuthzLDAPLogLevel</code></a> directive. Acceptable parameters are
+the same as for the <code>LogLevel</code> directive.
+</p>
+
+<h3><a name="transpauth">Transparent Authentication</a></h3>
+<p>
+When using <a href="#certificates">certificate authentication</a>
+(<a href="reference.html#AuthzLDAPUseCertificate"><code>AuthzLDAPUseCertificate</code></a> set to <code>on</code>), 
+the basic authentication header is no longer necesary.
+However, some applications will still need a user name, which e.g. in
+CGI-programms is read from the basic authentication header.
+For these programs, the basic authentication header is overwritten
+with the distinguished name of the owner of the certificate.
+In some cases, e.g. in a reverse proxy authenticating with certificates,
+the application may require an additional athentication.
+This means that the basic authentication header may not be overwritten
+by <code>mod_authz_ldap</code>, which can be prevented with the
+directive
+<font face="courier">
+<pre>
+    <a href="reference.html#AuthzLDAPSetAuthorization">AuthzLDAPSetAuthorization</a> off
+</pre>
+</font>
+The default is on.
+</p>
+
+<h2><a name="examples">10. Examples</a></h2>
+<p>
+Two examples show how this module can be used to secure a <a href="#server">web server</a>
+or <a href="#reverse">reverse proxy</a>.
+</p>
+
+<h3><a name="server">10.1. Web server authentication with X.509 certificates</a></h3>
+<p>
+This example describes how <code>mod_authz_ldap</code> can be used to
+authorize a user authenticated by an X.509 certificate. 
+The LDAP server in use is an <a href="http://www.openldap.org">OpenLDAP</a>
+server, for other servers, the preparatory steps (modification of the
+shema, user and group definitions) may be different.
+<ol>
+<li>Prepare the directory to store short forms of certificates of 
+a user. This involves adding suitable object types and attribute definitions
+to your directory, as described in <a href=""></a> above.
+</li>
+<li>
+Add nodes for the certificate mapping to the directory.
+You may want to modify the script <code>addcertmap</code> of
+the distribution for this purpose:
+<font face="courier">
+<pre>
+ldapadd -c -D cn=root,dc=othello,dc=ch -w secret &lt;&lt;EOF
+dn: ou=AuthzLDAPCertmap,dc=othello,dc=ch
+objectclass: top
+
+dn: uid=afm,ou=AuthzLDAPCertmap,dc=othello,dc=ch
+objectclass: top
+objectclass: authzLDAPmap
+issuerDN: /C=CH/ST=Schwyz/L=Altendorf/O=Othello/CN=Othello internal
+ CA/Email=ca@othello.ch
+subjectDN: /C=CH/ST=Schwyz/L=Altendorf/O=Othello/CN=Andreas Mueller
+ /Email=afm@othello.ch
+owner: uid=afm,ou=People,dc=othello,dc=ch
+
+EOF
+</pre>
+</font>
+</li>
+<li>Configure Apache to authenticate through a client certificate,
+to map the certificate DN to a user node in the directory and to
+authorize access to the directory <code>/confidential</code>
+based on the group membership of the user:
+<font face="courier">
+<pre>
+    &lt;Location /confidential>
+        SSLRequireSSL
+        AuthName        AuthzLDAP
+        AuthType        Basic
+        <a href="reference.html#AuthzLDAPServer">AuthzLDAPServer</a> "localhost:389"
+
+        <a href="reference.html#AuthzLDAPMethod">AuthzLDAPMethod</a> certificate
+        <a href="reference.html#AuthzLDAPMapMethod">AuthzLDAPMapMethod</a> issuersubject
+        <a href="reference.html#AuthzLDAPMapBase">AuthzLDAPMapBase</a> ou=AuthzLDAPCertmap,dc=othello,dc=ch
+        <a href="reference.html#AuthzLDAPMapScope">AuthzLDAPMapScope</a> onelevel
+
+	require valid-user
+    &lt;/Location>
+</pre>
+</font>
+</ol>
+</p>
+<h3><a name="reverse">10.2. Secure Reverse Proxy</a></h3>
+<p>
+One particularly usefull application of apache and its proxy module is
+as a security gateway to an internal web server.
+The <code>ProxyPass</code> and <code>ProxyPassReverse</code> directives 
+in conjunction with the above configuration lead to a secure proxy
+gateway to some internal server. Here es an example configuration:
+<font face="courier">
+<pre>
+    &lt;Location />
+        SSLRequireSSL
+        AuthName        AuthzLDAP
+        AuthType        Basic
+        <a href="reference.html#AuthzLDAPMethod">AuthzLDAPMethod</a> certificate
+        <a href="reference.html#AuthzLDAPServer">AuthzLDAPServer</a> "localhost:389"
+
+        <a href="reference.html#AuthzLDAPMapMethod">AuthzLDAPMapMethod</a> issuersubject
+        <a href="reference.html#AuthzLDAPMapBase">AuthzLDAPMapBase</a> ou=People,dc=othello,dc=ch
+        <a href="reference.html#AuthzLDAPMapScope">AuthzLDAPMapScope</a> onelevel
+
+        require valid-user
+    &lt;/Location>
+    ProxyPass        / http://intrahost.doma.in/
+    ProxyPassReverse / http://intrahost.doma.in/
+</pre>
+</font>
+This grants a user authenticated through an X.509 certificate and belonging
+to the group <code>authz</code> access to the web server on
+<code>intrahost.doma.in</code>. Note that you cannot do without the
+<code>AuthName</code>
+or <code>AuthType</code> directive.
+</p>
+
+<h2><a name="caveats">11. Caveats</a></h2>
+<p>
+Since the module modifies the basic authentication headers of a request,
+a call to the authentication function in a subrequest will find an already
+transformed user name, which cannot be authenticated again. 
+The authentication function only performs authentication for the 
+initial request. As a consequence, if a subrequest leads to a
+directory differently authenticated than the initial request,
+the mapping for the subrequest may be incorrect.
+However, the authorization is performed so differing <code>require</code>
+clauses for the subrequest are handled correctly.
+</p>
+
+<h2><a name="performance">12. Performance Impact</a></h2>
+<p>
+In a large directory, authentication with mod_authz_ldap becomes
+slow as soon as one of the searches performed is slow.
+Indexes can improve the performance considerably, the following
+table shows the attributes that need to be indexed for the various
+parts of mod_authz_ldap
+
+<table border="1">
+<tr>
+<th>Search Type</th>
+<th>Attribute</th>
+<th>Index Type</th>
+</tr>
+<tr>
+<td>User Search</td>
+<td><code>uid</code></td>
+<td>equality</td>
+</tr>
+<tr>
+<td>Group Search</td>
+<td><code>cn</code></td>
+<td>equality</td>
+</tr>
+<tr>
+<td rowspan="2">Certificate Mapping</td>
+<td><code>issuerDN</code></td>
+<td>equality</td>
+</tr>
+<tr>
+<td><code>subjectDN</code></td>
+<td>equality</td>
+</tr>
+</table>
+
+</p>
+<p>
+The module measures the elapsed and the cpu time for each request and logs
+it in log level debug to the error log.
+On a 233MHz Pentium, one can see that an
+immeasurable amount of cpu time is spent in the module (hardly ever more than
+the 10ms resolution).
+The elapsed time depends very much on whether this is the first call
+to the module: during the first call, an LDAP connection is established,
+which makes take the module around 70ms if the LDAP server resides on
+the same machine.
+Subsequent calls to the authorization function usually take just above
+1ms, but calls to the authentication function less than 1ms.
+The performance hit by this module is therefore negligible: a simple
+directory listing request on the same machine takes around 150ms
+to complete, so the impact of the module is around 1%.
+</p>
+<p>
+Even a somewhat dated Sun SPARCstation 10 spends only a few milliseconds
+in the authentication function, the authorization function is even cheaper.
+</p>
+<p>
+All this changes for worse if the LDAP server is overloaded or otherwise
+slow. E. g. if the certificate issuer or subject attribute is not indexed,
+the search for the owner of the certficate may well be slow.
+</p>
+
+<h2><a name="troubleshooting">13. Troubleshooting</a></h2>
+<p>
+<code>mod_authz_ldap</code> makes extensive use of <code>ap_log_rerror</code>
+to log debug messages to the servers error log. All critical actions
+are documented there, and all errors generate an error message.
+The first step when debugging <code>mod_authz_ldap</code> is therefore
+to raise the server's log level to <code>debug</code>.
+</p>
+<p>
+If you cannot solve the problem from the debug output, you may send
+a problem report to the author. Please equip the message with a succinct
+Subject:-line, or it may get lost between the junk mail messages
+(if your subject is ``Help'', it may well happen that the message
+is not read at all).
+</p>
+
+</font>
+</td>
+<td width="10"></td>
+</tr>
+
+<tr><td colspan="9">&nbsp;</td></tr>
+
+<tr>
+<td width="10"></td>
+<td bgcolor="#ffffff" colspan="7">
+<font face="helvetica">
+&copy; <a href="mailto:andreas.mueller@othello.ch">Dr. Andreas M&uuml;ller</a>,
+<a href="http://www.othello.ch">Beratung und Entwicklung</a>.
+</font>
+</td>
+<td width="10"></td>
+</tr>
+</table>
+
+</body>
+</html>
+
